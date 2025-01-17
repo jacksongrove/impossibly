@@ -7,7 +7,7 @@ import time
 from openai import OpenAI
 
 class Agent:
-    def __init__(self, client, model="gpt-4o", name="agent", system_prompt="You are a helpful assistant."):
+    def __init__(self, client: OpenAI, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.") -> None:
         self.client = client
         self.model = model
         self.name = name
@@ -15,7 +15,7 @@ class Agent:
         self.assistant_id = self._create_assistant()
         self.thread_id = self._create_thread()
     
-    def _create_assistant(self):
+    def _create_assistant(self) -> str:
         '''
         Creates an OpenAI Assistant, returning its Assistant ID
 
@@ -29,7 +29,7 @@ class Agent:
         )
         return assistant.id
 
-    def _create_thread(self):
+    def _create_thread(self) -> str:
         '''
         Creates a thread for the Agent to track messages
 
@@ -41,7 +41,7 @@ class Agent:
         )
         return thread.id
 
-    def invoke(self, chat_prompt=""):
+    def invoke(self, chat_prompt: str = "") -> str:
         '''
         Prompts the model, returning a text response
 
@@ -54,7 +54,7 @@ class Agent:
         # Add message to thread
         message = self.client.beta.threads.messages.create(
             thread_id=self.thread_id,
-            role="user",
+            role="assistant",
             content=chat_prompt
         )
         
