@@ -7,6 +7,7 @@ import time
 from openai import OpenAI
 from anthropic import Anthropic
 import shutil
+import textwrap
 
 class Agent:
     def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.") -> None:
@@ -51,16 +52,7 @@ class OpenAIAgent:
         
         if show_thinking:
             # Log the formatted system prompt and chat prompt
-            terminal_width = shutil.get_terminal_size((80, 20)).columns
-            yellow = '\033[93m'
-            green = '\033[92m'
-            reset = '\033[0m'
-            header = f"\n {green}{self.name}{reset} "
-            visible_header = f" {reset}{header}{yellow} "
-            dashes = (terminal_width - (len(visible_header) + len(yellow) + len(reset))) // 2
-            print(f"{yellow}{'-' * dashes}{visible_header}{'-' * dashes}{reset}")
-            print(f"{yellow}System Prompt:{reset} {self.system_prompt}\n")
-            print(f"{yellow}Chat Prompt:{reset} {chat_prompt}\n")
+            self._log_thinking(chat_prompt)
 
         # Add message to thread
         self.messages.append(
@@ -73,6 +65,31 @@ class OpenAIAgent:
             messages=self.messages
         )
         return response.choices[0].message.content
+    
+
+    def _log_thinking(self, chat_prompt: str) -> None:
+        terminal_width = shutil.get_terminal_size((80, 20)).columns
+        yellow = '\033[93m'
+        green = '\033[92m'
+        reset = '\033[0m'
+        header = f" {green}{self.name}{reset} "
+        visible_header = f" {header} "
+        dashes = (terminal_width - len(visible_header)) // 2
+
+        # Display agent name as header
+        print(f"{yellow}{'-' * dashes}{reset}{visible_header}{yellow}{'-' * dashes}{reset}")
+        
+        # Helper function to enforce formatted prompts
+        def format_text(text):
+            formatted_lines = []
+            for line in text.split("\n"):  # Preserve explicit newlines
+                wrapped_lines = textwrap.wrap(line, width=terminal_width - 4)  # Wrap lines with adjusted width
+                formatted_lines.extend(["    " + wrapped_line for wrapped_line in wrapped_lines])  # Add indentation
+            return "\n".join(formatted_lines)
+
+        # Display formatted prompts
+        print(f"{yellow}System Prompt:{reset} {self.system_prompt}\n")
+        print(f"{yellow}Chat Prompt:{reset}\n" + format_text(chat_prompt) + "\n")
     
 
 class AnthropicAgent:
