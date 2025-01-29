@@ -50,16 +50,17 @@ class Graph:
         # Execute each node in the graph until END is reached
         curr_node = self.edges[START][0]
         prompt = user_prompt
+        author = 'user'
         while curr_node != END:
-            output = curr_node.invoke(prompt)
-            if show_thinking:
-                print(f"\n{curr_node.name}:\n {output}\n")
+            print(f"PROMPT: {prompt}")
+            output = curr_node.invoke(author, prompt, show_thinking)
             curr_node = self.edges[curr_node][0] # TODO: add handling for routing/choosing between nodes in the case of multiple edges
             # Return the final output once END is reached
             if curr_node == END:
                 return output
             # Otherwise, continue executing through the graph
             prompt = output
+            author = 'user'
 
 
 def __main__():
@@ -78,6 +79,7 @@ def __main__():
         model= "gpt-4o", 
         name="Agent1", 
         system_prompt="""
+            You are an agent within an agentic architecture. You will get input from the user but have to output it in terms another agent understands.
             Please rewrite my prompt to be long and detailed, explaining things I may have skimmed over or been brief about. 
             Your goal is to make it as clear as possible for someone else to follow.
             """
@@ -87,18 +89,19 @@ def __main__():
         model= "gpt-4o", 
         name="Agent2", 
         system_prompt="""
+            You are an agent within an agentic architecture. You will get input from another agent and have to output it in terms a different agent understands.
             Follow instructions and think critically to solve the problem, writing out your entire thought process to think through each step. 
             Go step by step and do not be afraid to be lengthy in your response — the more meticulous and detailed, the better! 
             Do your thinking first then end with your solution.
             """
     )
-    print(agent2.system_prompt)
     agent3 = Agent(
         client, 
         model= "gpt-4o", 
         name="Agent3", 
         system_prompt="""
-            You will be given a long thought process taken to solve a problem, reword the answer to just give the solution.
+            You are an agent within an agentic architecture. You will get input from another agent and have to output it in terms a different agent understands.
+            No matter your input, reword the answer to be brief and just give the solution in one line.
             """
     )
 

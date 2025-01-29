@@ -5,43 +5,39 @@ Author: Jackson Grove 1/15/2025
 '''
 import time
 from openai import OpenAI
+from anthropic import Anthropic
+import shutil
 
 class Agent:
-    def __init__(self, client: OpenAI, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.") -> None:
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.") -> None:
+        if isinstance(client, OpenAI):
+            self.client = OpenAIAgent(client, system_prompt, model, name)
+        elif isinstance(client, Anthropic):
+            self.client = AnthropicAgent(client, system_prompt, model, name)
+        else:
+            raise ValueError("Client must be an instance of OpenAI or Anthropic")
+        self.model = self.client.model
+        self.name = self.client.name
+        self.system_prompt = self.client.system_prompt
+        self.messages = self.client.messages
+
+        
+    def invoke(self, author: str, prompt: str, show_thinking: bool = False) -> str:
+        return self.client.invoke(author, prompt, show_thinking)
+
+
+class OpenAIAgent:
+    def __init__(self, client: OpenAI, system_prompt: str, model: str = "gpt-4o", name: str = "agent") -> None:
         self.client = client
         self.model = model
         self.name = name
         self.system_prompt = system_prompt
-        self.assistant_id = self._create_assistant()
-        self.thread_id = self._create_thread()
-    
-    def _create_assistant(self) -> str:
-        '''
-        Creates an OpenAI Assistant, returning its Assistant ID
+        self.messages = [
+            {"role": "system", "content": system_prompt}
+        ]
 
-        Returns:
-            The Agent's Assistant ID for later reference and usage (string)
-        '''
-        assistant = self.client.beta.assistants.create(
-            name=self.name,
-            instructions=self.system_prompt,
-            model=self.model
-        )
-        return assistant.id
 
-    def _create_thread(self) -> str:
-        '''
-        Creates a thread for the Agent to track messages
-
-        Returns:
-            The Agent's Thread ID for later reference and usage (string)
-        '''
-        thread = self.client.beta.threads.create(
-            messages=[]
-        )
-        return thread.id
-
-    def invoke(self, chat_prompt: str = "") -> str:
+    def invoke(self, author: str, chat_prompt: str = "", show_thinking: bool = False) -> str:
         '''
         Prompts the model, returning a text response
 
@@ -51,53 +47,47 @@ class Agent:
         Returns:
             Text response from the model (string)
         '''
+        assert author in ['system', 'assistant', 'user', 'function', 'tool', 'developer'], f"Invalid value: '{author}'. Supported values are: system, assistant, user, function, tool, developer"
+        
+        if show_thinking:
+            # Log the formatted system prompt and chat prompt
+            terminal_width = shutil.get_terminal_size((80, 20)).columns
+            yellow = '\033[93m'
+            green = '\033[92m'
+            reset = '\033[0m'
+            header = f"\n {green}{self.name}{reset} "
+            visible_header = f" {reset}{header}{yellow} "
+            dashes = (terminal_width - (len(visible_header) + len(yellow) + len(reset))) // 2
+            print(f"{yellow}{'-' * dashes}{visible_header}{'-' * dashes}{reset}")
+            print(f"{yellow}System Prompt:{reset} {self.system_prompt}\n")
+            print(f"{yellow}Chat Prompt:{reset} {chat_prompt}\n")
+
         # Add message to thread
-        message = self.client.beta.threads.messages.create(
-            thread_id=self.thread_id,
-            role="assistant",
-            content=chat_prompt
+        self.messages.append(
+            {"role": author, "content": chat_prompt}
         )
         
         # Create a run to execute newly added message
-        run = self.client.beta.threads.runs.create(
-            thread_id=self.thread_id,
-            assistant_id=self.assistant_id,
-            instructions=chat_prompt,
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=self.messages
         )
-        run_id = run.id
+        return response.choices[0].message.content
+    
 
-        # Wait until the run is complete
-        run = self.client.beta.threads.runs.retrieve(
-            thread_id=self.thread_id,
-            run_id=run_id
-        )
-        while run.status in ['in_progress', 'queued']:
-            # Query again to update run status
-            run = self.client.beta.threads.runs.retrieve(
-                thread_id=self.thread_id,
-                run_id=run_id
-            )
-            time.sleep(.1)
-        
-        # Handle run completion once finished
-        if run.status == 'completed':
-            messages = self.client.beta.threads.messages.list(
-                thread_id=self.thread_id
-            )
-            return messages.data[0].content[0].text.value
-        elif run.status == 'requires_action':
-            print("requires an action") # TODO: Code to call actions & route responses
-        elif run.status == 'expired':
-            raise TimeoutError('The run execution expired. Try again.')
-        elif run.status == 'failed':
-            raise TimeoutError('The run execution failed. Try again.')
-        elif run.status == 'incomplete':
-            raise TimeoutError('The run execution never completed. Try again.')
-        elif run.status == 'cancelling':
-            print("The run execution is cancelling.")
-            pass
-        elif run.status == 'cancelled':
-            print("The run execution was cancelled.")
-            pass
-        else:
-            raise ValueError(f"Unexpected value for Run status: {run.status}")
+class AnthropicAgent:
+    def __init__(self, client: Anthropic, system_prompt: str, model: str = "claude-3-5-sonnet-20240620", name: str = "agent") -> None:
+        self.client = client
+        self.model = model
+        self.name = name
+        self.system_prompt = system_prompt
+        self.messages = [{"role": "system", "content": system_prompt}]
+
+    def invoke(self, author: str, chat_prompt: str = "", show_thinking: bool = False) -> str:
+        '''
+        Prompts the model, returning a text response
+
+        Args:
+            :chat_prompt (string): The prompt to send to the model.
+        '''
+        pass
