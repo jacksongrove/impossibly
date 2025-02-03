@@ -1,8 +1,10 @@
 import os
 from dotenv import load_dotenv
-from agent import *
-from graph import Graph
 
+# Import modules from your package using absolute imports
+from imagination_engine1.agent import Agent
+from imagination_engine1.graph import Graph
+from imagination_engine1.utils.start_end import START, END
 
 def __main__():
     # Load environment variables
@@ -11,13 +13,14 @@ def __main__():
     if not OPENAI_API_KEY:
         raise ValueError("OpenAI API key is not set. Please check your .env file.")
 
-    # Initalize client
+    # Initialize client
+    from openai import OpenAI  # it's better to import this where it's needed
     client = OpenAI(api_key=OPENAI_API_KEY)
 
-    # Initalize Agents
+    # Initialize Agents
     agent1 = Agent(
         client, 
-        model= "gpt-4o", 
+        model="gpt-4o", 
         name="Agent1", 
         system_prompt="""
             You are an agent within an agentic architecture. You will get input from the user but have to output it in terms another agent understands. 
@@ -27,7 +30,7 @@ def __main__():
     )
     agent2 = Agent(
         client, 
-        model= "gpt-4o", 
+        model="gpt-4o", 
         name="Agent2", 
         system_prompt="""
             You are an agent within an agentic architecture. You will get input from another agent and have to output it in terms a different agent understands.
@@ -38,7 +41,7 @@ def __main__():
     )
     agent3 = Agent(
         client, 
-        model= "gpt-4o", 
+        model="gpt-4o", 
         name="Agent3", 
         system_prompt="""
             You are an agent within an agentic architecture. You will get input from another agent and have to output it in terms a different agent understands.
@@ -46,7 +49,7 @@ def __main__():
             """
     )
 
-    # Initalize and build Graph
+    # Initialize and build Graph
     graph = Graph()
 
     graph.add_node(agent1)
@@ -61,7 +64,6 @@ def __main__():
     # Invoke graph
     response = graph.invoke("Tell me how I can live my best life.", show_thinking=True)
     print(response)
-    
 
 if __name__ == "__main__":
     __main__()
