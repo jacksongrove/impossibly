@@ -1,20 +1,26 @@
 import os
+import sys
+from pathlib import Path
 from dotenv import load_dotenv
 
-# Import modules from your package using absolute imports
-from imagination_engine1.agent import Agent
-from imagination_engine1.graph import Graph
-from imagination_engine1.utils.start_end import START, END
+# Determine the lib directory
+lib_dir = Path(__file__).resolve().parent.parent / 'lib'
+sys.path.insert(0, str(lib_dir))
+
+# Import modules from your local package using absolute imports
+from agent import Agent
+from graph import Graph
+from utils.start_end import START, END
 
 def __main__():
-    # Load environment variables
+    # Load environment variables from .env file
     load_dotenv()
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     if not OPENAI_API_KEY:
         raise ValueError("OpenAI API key is not set. Please check your .env file.")
 
-    # Initialize client
-    from openai import OpenAI  # it's better to import this where it's needed
+    # Initialize the OpenAI client where needed
+    from openai import OpenAI
     client = OpenAI(api_key=OPENAI_API_KEY)
 
     # Initialize Agents
@@ -49,9 +55,8 @@ def __main__():
             """
     )
 
-    # Initialize and build Graph
+    # Initialize and build the graph
     graph = Graph()
-
     graph.add_node(agent1)
     graph.add_node(agent2)
     graph.add_node(agent3)
@@ -61,7 +66,7 @@ def __main__():
     graph.add_edge(agent2, agent3)
     graph.add_edge(agent3, END)
 
-    # Invoke graph
+    # Invoke the graph with an example prompt and show the thinking process
     response = graph.invoke("Tell me how I can live my best life.", show_thinking=True)
     print(response)
 
