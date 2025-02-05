@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Determine the lib directory
-lib_dir = Path(__file__).resolve().parent.parent / 'lib'
+lib_dir = Path(__file__).resolve().parent.parent / 'src' / 'imengine'
 sys.path.insert(0, str(lib_dir))
 
 # Import modules from your local package using absolute imports
@@ -19,7 +19,7 @@ def __main__():
     if not OPENAI_API_KEY:
         raise ValueError("OpenAI API key is not set. Please check your .env file.")
 
-    # Initialize the OpenAI client where needed
+    # Initialize the OpenAI client
     from openai import OpenAI
     client = OpenAI(api_key=OPENAI_API_KEY)
 
