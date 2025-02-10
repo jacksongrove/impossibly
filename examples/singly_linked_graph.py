@@ -32,7 +32,8 @@ def __main__():
             You are an agent within an agentic architecture. You will get input from the user but have to output it in terms another agent understands. 
             Please rewrite my prompt to be long and detailed, explaining things I may have skimmed over or been brief about. 
             Your goal is to make it as clear as possible for someone else to follow.
-            """
+            """,
+        description="This agent takes the user's input and rewrites it to be more detailed and clear for another agent to understand."
     )
     agent2 = Agent(
         client, 
@@ -43,7 +44,8 @@ def __main__():
             Follow instructions and think critically to solve the problem, writing out your entire thought process to think through each step. 
             Go step by step and do not be afraid to be lengthy in your response — the more meticulous and detailed, the better! 
             Do your thinking first then end with your solution.
-            """
+            """,
+        description="This agent takes the detailed input from the first agent and thinks through the problem step by step, explaining the entire thought process."
     )
     agent3 = Agent(
         client, 
@@ -52,7 +54,8 @@ def __main__():
         system_prompt="""
             You are an agent within an agentic architecture. You will get input from another agent and have to output it in terms a different agent understands.
             No matter your input, reword the answer to be brief and just give the solution in one line.
-            """
+            """,
+        description="This agent takes the detailed thought process from the second agent and outputs a brief solution."
     )
 
     # Initialize and build the graph

@@ -4,8 +4,9 @@ Graph.py
 Initializing the graph structure to define the order in which agents execute and how agents 
 communicate with one another.
 
-Author: Jackson Grove 1/15/2025
+Author: Jackson Grove
 '''
+import re
 from agent import *
 from utils.start_end import START, END
 
@@ -40,6 +41,7 @@ class Graph:
         '''
         self.edges[node1].append(node2)
 
+
     def invoke(self, user_prompt: str = "", show_thinking: bool = False) -> str:
         # Output the user prompt if there are no agents defined
         if len(self.nodes) == 2: # (When only START and END nodes are defined)
@@ -50,11 +52,37 @@ class Graph:
         prompt = user_prompt
         author = 'user'
         while curr_node != END:
-            output = curr_node.invoke(author, prompt, show_thinking)
-            curr_node = self.edges[curr_node][0] # TODO: add handling for routing/choosing between nodes in the case of multiple edges
+            output = curr_node.invoke(author, prompt, self.edges[curr_node], show_thinking)
+            # Route to intended node in the case of multiple branching edges
+            i = 0
+            if len(self.edges[curr_node]) > 1:
+                i, output = self._get_route(curr_node, output)
+            curr_node = self.edges[curr_node][i]
+
             # Return the final output once END is reached
             if curr_node == END:
                 return output
             # Otherwise, continue executing through the graph
             prompt = output
             author = 'user'
+            
+        
+    def _get_route(self, node: Agent, output: str):
+        '''
+        Extracts the desired route from a node's response and returns the index of the corresponding node in the node's edge list. This index is used to determine the next node to invoke. If a 
+        command to route to an agent is found, the command is removed from the output. If no command is found, a random route is chosen.
+        
+
+        Args:
+            :node (Agent): The node to route from
+            :output (str): The Agent response to extract the desired route from. The name of the desired agent will be deliminated by a double backslash ('\\').
+        '''
+        options = self.edges[node]
+        # Regex from back of list to find agent names in delimited text
+        match = re.search(r'(?<=\\\\)(.*?)(?=\\\\)', output, re.DOTALL)
+        if match:
+            # Remove the last instance of the command from the output
+            output = re.sub(r'\\\\' + re.escape(match.group(1)) + r'\\\\', '', output, count=1)
+            return options.index(match.group(1)), output
+        print("No route found. Choosing random route.")
+        return 0, output

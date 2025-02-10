@@ -1,44 +1,48 @@
 '''
 Defines individual agent types to be called within the graph structure.
 
-Author: Jackson Grove 1/15/2025
+Author: Jackson Grove
 '''
-import time
-from openai import OpenAI
-from anthropic import Anthropic
+import re
 import shutil
 import textwrap
+from openai import OpenAI
+from anthropic import Anthropic
+from utils.start_end import END
 
 class Agent:
-    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.") -> None:
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "") -> None:
         if isinstance(client, OpenAI):
-            self.client = OpenAIAgent(client, system_prompt, model, name)
+            self.client = OpenAIAgent(client, system_prompt, model, name, description)
         elif isinstance(client, Anthropic):
-            self.client = AnthropicAgent(client, system_prompt, model, name)
+            self.client = AnthropicAgent(client, system_prompt, model, name, description)
         else:
             raise ValueError("Client must be an instance of OpenAI or Anthropic")
         self.model = self.client.model
         self.name = self.client.name
         self.system_prompt = self.client.system_prompt
         self.messages = self.client.messages
+        self.description = self.client.description
 
         
-    def invoke(self, author: str, prompt: str, show_thinking: bool = False) -> str:
-        return self.client.invoke(author, prompt, show_thinking)
+    def invoke(self, author: str, prompt: str, edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+        return self.client.invoke(author, prompt, edges, show_thinking)
 
 
 class OpenAIAgent:
-    def __init__(self, client: OpenAI, system_prompt: str, model: str = "gpt-4o", name: str = "agent") -> None:
+    def __init__(self, client: OpenAI, system_prompt: str, model: str = "gpt-4o", name: str = "agent", description: str = "A general purpose agent", routing_instructions: str = "") -> None:
         self.client = client
         self.model = model
         self.name = name
         self.system_prompt = system_prompt
+        self.description = description
+        self.routing_instructions = routing_instructions
         self.messages = [
             {"role": "system", "content": system_prompt}
         ]
 
 
-    def invoke(self, author: str, chat_prompt: str = "", show_thinking: bool = False) -> str:
+    def invoke(self, author: str, chat_prompt: str = "", edges: list['Agent'] = None, show_thinking: bool = False) -> str:
         '''
         Prompts the model, returning a text response
 
@@ -54,9 +58,16 @@ class OpenAIAgent:
             # Log the formatted system prompt and chat prompt
             self._log_thinking(chat_prompt)
 
+        # Define routing options & commands
+        routing_options = ""
+        if edges and len(edges) > 1:
+            routing_options = "Routing Options:\nPrint ONE of the following commands after your response to send your response to that agent. You are required to choose one.\n\n"
+            for agent in edges:
+                routing_options += f"\nCommand: '\\\\{agent.name if agent is not END else 'END'}\\\\'\tDescription: {agent.description if agent is not END else 'The end of the graph, to return the final response to the user.'}"
+
         # Add message to thread
         self.messages.append(
-            {"role": author, "content": f'System Prompt: {self.system_prompt}\n\nChat Prompt: {chat_prompt}'}
+            {"role": author, "content": f'System Prompt: {self.system_prompt}\n\nChat Prompt: {chat_prompt}\n\n{routing_options}'} # TODO: Implement optional routing instructions for additional logic
         )
         
         # Create a run to execute newly added message
