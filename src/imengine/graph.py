@@ -83,6 +83,14 @@ class Graph:
         if match:
             # Remove the last instance of the command from the output
             output = re.sub(r'\\\\' + re.escape(match.group(1)) + r'\\\\', '', output, count=1)
-            return options.index(match.group(1)), output
+            
+            # Get index of the desired agent in the node's edge list
+            # Check if the match is the END command
+            if match.group(1) == 'END':
+                return options.index(END), output
+            else:
+                for i, option in enumerate(options):
+                    if option.name == match.group(1):
+                        return i, output
         print("No route found. Choosing random route.")
         return 0, output
