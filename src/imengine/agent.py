@@ -10,7 +10,39 @@ from openai import OpenAI
 from anthropic import Anthropic
 from utils.start_end import END
 
+#TODO: Add shared memory to agent (list of agents to read memory from)
+#TODO: Add tool use
+
 class Agent:
+    '''
+    A unified agent that interfaces with a specific language model client.
+
+    This class acts as a wrapper that abstracts away the details of the underlying API,
+    dynamically delegating requests to either an OpenAI- or Anthropic-based agent. It sets
+    up configuration parameters such as the model identifier, system prompt, agent name, and 
+    an optional description used for initialization or runtime behavior.
+
+    Parameters:
+        client: An instance of either the OpenAI or Anthropic client. This determines
+                which underlying agent (OpenAIAgent or AnthropicAgent) will be instantiated.
+        model (str, optional): The identifier of the language model to be used. Defaults to "gpt-4o".
+        name (str, optional): The name assigned to this agent. Defaults to "agent".
+        system_prompt (str, optional): The system prompt that configures the agent's initial behavior.
+                                       Defaults to "You are a helpful assistant.".
+        description (str, optional): An additional description for the agent. Defaults to an empty string.
+        shared_memory (list, optional): A list of agents to read memory from. Defaults to an empty list.
+
+    Attributes:
+        client: The underlying agent instance (either OpenAIAgent or AnthropicAgent).
+        model (str): The identifier of the language model.
+        name (str): The name of the agent.
+        system_prompt (str): The system prompt configuring the agent's behavior.
+        description (str): An additional description for the agent.
+
+    Raises:
+        ValueError: If the provided client is not an instance of either OpenAI or Anthropic.
+    '''
+
     def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "") -> None:
         if isinstance(client, OpenAI):
             self.client = OpenAIAgent(client, system_prompt, model, name, description)

@@ -59,8 +59,9 @@ class Graph:
                 i, output = self._get_route(curr_node, output)
             curr_node = self.edges[curr_node][i]
 
-            # Return the final output once END is reached
+            # Return & display the final output once END is reached
             if curr_node == END:
+                
                 return output
             # Otherwise, continue executing through the graph
             prompt = output
