@@ -9,6 +9,7 @@ import textwrap
 from openai import OpenAI
 from anthropic import Anthropic
 from utils.start_end import END
+from utils.memory import Memory
 
 #TODO: Add shared memory to agent (list of agents to read memory from)
 #TODO: Add tool use
@@ -38,12 +39,13 @@ class Agent:
         name (str): The name of the agent.
         system_prompt (str): The system prompt configuring the agent's behavior.
         description (str): An additional description for the agent.
+        shared_memory (list of Agents): A list of agents to read memory from.
 
     Raises:
         ValueError: If the provided client is not an instance of either OpenAI or Anthropic.
     '''
 
-    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "") -> None:
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", shared_memory: list['Agent'] = None) -> None:
         if isinstance(client, OpenAI):
             self.client = OpenAIAgent(client, system_prompt, model, name, description)
         elif isinstance(client, Anthropic):
@@ -55,6 +57,7 @@ class Agent:
         self.system_prompt = self.client.system_prompt
         self.messages = self.client.messages
         self.description = self.client.description
+        self.shared_memory = shared_memory
 
         
     def invoke(self, author: str, prompt: str, edges: list['Agent'] = None, show_thinking: bool = False) -> str:
@@ -76,10 +79,34 @@ class OpenAIAgent:
 
     def invoke(self, author: str, chat_prompt: str = "", edges: list['Agent'] = None, show_thinking: bool = False) -> str:
         '''
-        Prompts the model, returning a text response
+        Prompts the model, returning a text response. System instructions, routing options and chat history are aggregated into the prompt in the following format:
+
+            System Instructions:
+                {system_prompt}
+
+            Chat Prompt:
+                {chat_prompt}
+
+            Previous conversations:
+                {example agent 1} -> {example agent 2}: {content}
+                {example agent 1} -> {example agent 3}: {content}
+                {example agent 2} -> {example agent 1}: {content}
+                (rest of chat history continued...  NOTE: This section will only appear if the agent has a shared memory with other agents. The Agent conversations that appear will be limited to 
+                those in the shared_memory attribute)
+
+            Routing Options:
+                Print ONE of the following commands after your response to send your response to that agent. You are required to choose one.
+
+                '\\\\option1\\\\'  Description: {description}
+                '\\\\option2\\\\'  Description: {description}
+                (rest of routing options continued...)
+        
+        This is all encapsulated in the list of threaded message history then passed to the model.
 
         Args:
             :chat_prompt (string): The prompt to send to the model.
+            :edges (list[Agent]): A list of agents to route to.
+            :show_thinking (bool): Whether to print the system prompt and chat prompt to the console.
 
         Returns:
             Text response from the model (string)

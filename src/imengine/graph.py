@@ -9,6 +9,7 @@ Author: Jackson Grove
 import re
 from agent import *
 from utils.start_end import START, END
+from utils.memory import Memory
 
 class Graph:
     '''
@@ -47,23 +48,34 @@ class Graph:
         if len(self.nodes) == 2: # (When only START and END nodes are defined)
             return prompt
         
+        # Create a global memory for the graph
+        global_memory = Memory()
+
         # Execute each node in the graph until END is reached
         curr_node = self.edges[START][0]
         prompt = user_prompt
         author = 'user'
         while curr_node != END:
+            # Check if agent listens to other Agents (has shared memory)
+            if curr_node.shared_memory:
+                prompt += f'\n\nPrevious messages: \n{global_memory.get_formatted(curr_node.shared_memory, curr_node.shared_memory)}' # TODO: Support distinct author and receiver Agent lists
+
+            # Invoke the current node
             output = curr_node.invoke(author, prompt, self.edges[curr_node], show_thinking)
             # Route to intended node in the case of multiple branching edges
             i = 0
             if len(self.edges[curr_node]) > 1:
                 i, output = self._get_route(curr_node, output)
-            curr_node = self.edges[curr_node][i]
 
-            # Return & display the final output once END is reached
-            if curr_node == END:
-                
+            # Look ahead for the END node, return & display the final output once END is reached
+            if self.edges[curr_node][i] == END:
                 return output
-            # Otherwise, continue executing through the graph
+
+            # Update global memory
+            global_memory.add(curr_node, self.edges[curr_node][i], output)
+
+            # Continue executing through the graph until END is reached
+            curr_node = self.edges[curr_node][i]
             prompt = output
             author = 'user'
             
