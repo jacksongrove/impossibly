@@ -23,24 +23,52 @@ class Graph:
         }
         self.nodes = self.edges.keys()
     
-    def add_node(self, agent: Agent) -> None:
+
+    def add_node(self, agent: Agent | list[Agent]) -> None:
         '''
-        Adds a node to the graph. This will not be connected until an edge is added.
+        Adds a node or multiple nodes to the graph. This will not be connected until an edge is added.
 
         Args:
-            :agent (Agent): The Agent object to be added as a node.
+            :agent (Union[Agent, List[Agent]]): The Agent object or a list of Agent objects to be added as nodes.
         '''
-        self.edges[agent] = []
+        if isinstance(agent, list):
+            for a in agent:
+                if not isinstance(a, Agent):
+                    raise ValueError("All items in the list must be Agent instances.")
+                self.edges[a] = []
+        elif isinstance(agent, Agent):
+            self.edges[agent] = []
+        else:
+            raise ValueError("agent must be either an Agent or a list of Agents.")
     
-    def add_edge(self, node1: Agent, node2: Agent) -> None:
-        '''
-        Adds an edge from node1 to node2, routing the output of node1 to the input of node2
 
-        Args:
-            :node1 (Agent): The node to route from, sending the output to node2's input
-            :node2 (Agent): The node to route to, receiving the output of node1 as input
+    def add_edge(self, node1: Agent | list[Agent], node2: Agent | list[Agent]) -> None:
         '''
-        self.edges[node1].append(node2)
+        Adds an edge or edges between node1 and node2, routing the output of node1 
+        to the input of node2. If either node1 or node2 is a list, an edge is added 
+        for every combination of node1 and node2.
+        
+        Args:
+            node1 (Agent or list[Agent]): The node(s) to route from.
+            node2 (Agent or list[Agent]): The node(s) to route to.
+        '''
+        # Normalize node1 to a list if it is not already.
+        if not isinstance(node1, list):
+            node1 = [node1]
+        # Normalize node2 to a list if it is not already.
+        if not isinstance(node2, list):
+            node2 = [node2]
+
+        # For each combination, add the edge
+        for n1 in node1:
+            if n1 not in self.edges:
+                raise ValueError(f"{n1} is not a valid node in the graph. Please add it first.")
+            for n2 in node2:
+                if n1 is not n2:
+                    if n2 not in self.edges:
+                        raise ValueError(f"{n2} is not a valid node in the graph. Please add it first.")
+                    self.edges[n1].append(n2)
+
 
 
     def invoke(self, user_prompt: str = "", show_thinking: bool = False) -> str:
