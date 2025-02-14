@@ -102,12 +102,9 @@ def __main__():
     graph.add_node(summarizer)
 
     graph.add_edge(START, gating_network)
-    graph.add_edge(gating_network, philosopher)
-    graph.add_edge(gating_network, founder)
-    graph.add_edge(founder, philosopher)
-    graph.add_edge(philosopher, founder)
-    graph.add_edge(founder, summarizer)
-    graph.add_edge(philosopher, summarizer)
+    graph.add_edge(gating_network, [philosopher, founder])
+    graph.add_edge(founder, [philosopher, summarizer])
+    graph.add_edge(philosopher, [founder, summarizer])
     graph.add_edge(summarizer, END)
 
     # Invoke the graph with an example prompt and show the thinking process
