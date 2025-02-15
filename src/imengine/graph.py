@@ -13,7 +13,35 @@ from utils.memory import Memory
 
 class Graph:
     '''
-    Graph structure to define the order in which agents execute and how agents communicate with one another.
+    A directed graph that orchestrates the execution of agents and the flow of communication between them within an agentic architecture.
+
+    This class defines nodes as agents (or special tokens such as START and END) and edges as directional connections that route messages from one node (agent) to another. It manages the order in 
+    which agents are invoked, facilitates shared memory access, and extracts routing commands from agent outputs to dynamically control the conversation flow.
+
+    Attributes:
+        edges (dict): A mapping where keys are nodes (Agent instances or special tokens) and 
+                      values are lists of adjacent nodes representing outgoing connections.
+        nodes: A view of the keys of the edges dictionary.
+
+    Methods:
+        add_node(agent: Agent | list[Agent]) -> None:
+            Adds a node or multiple nodes to the graph. Nodes are not connected until edges are added.
+        
+        add_edge(node1: Agent | list[Agent], node2: Agent | list[Agent]) -> None:
+            Adds directed edges between nodes, routing the output of node1 to the input of node2.
+            Self-edges (a node connected to itself) are not allowed.
+        
+        invoke(user_prompt: str = "", show_thinking: bool = False) -> str:
+            Executes the graph workflow, passing the user prompt through the agents until the END node 
+            is reached. The method manages shared memory, routes outputs based on agent responses, 
+            and returns the final output.
+        
+        _get_route(node: Agent, output: str):
+            Extracts a routing command from an agent's output to determine the next node to invoke. 
+            If no valid command is found, a default route is selected.
+
+    Raises:
+        ValueError: If an invalid node is referenced (i.e., not added to the graph) during edge addition.
     '''
     def __init__(self) -> None:
         # Initalizing hash map for edges
@@ -26,10 +54,13 @@ class Graph:
 
     def add_node(self, agent: Agent | list[Agent]) -> None:
         '''
-        Adds a node or multiple nodes to the graph. This will not be connected until an edge is added.
+        Adds a node or multiple nodes to the graph. Nodes will not be connected until edges are added.
 
         Args:
-            :agent (Union[Agent, List[Agent]]): The Agent object or a list of Agent objects to be added as nodes.
+            agent (Agent or list[Agent]): The Agent object or a list of Agent objects to be added as nodes.
+
+        Raises:
+            ValueError: If any item in the provided list is not an Agent.
         '''
         if isinstance(agent, list):
             for a in agent:
@@ -68,7 +99,6 @@ class Graph:
                     if n2 not in self.edges:
                         raise ValueError(f"{n2} is not a valid node in the graph. Please add it first.")
                     self.edges[n1].append(n2)
-
 
 
     def invoke(self, user_prompt: str = "", show_thinking: bool = False) -> str:

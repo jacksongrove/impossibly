@@ -184,7 +184,7 @@ def __main__():
 
     graph.add_edge(START, gating_network)
     graph.add_edge(gating_network, [scientist, economist, psychologist, historian, engineer, legal_expert, medical_expert, technology_expert])
-    graph.add_edge([scientist, economist, psychologist, historian, engineer, legal_expert, medical_expert, technology_expert], [scientist, economist, psychologist, historian, engineer, legal_expert, medical_expert, technology_expert, summarizer])
+    graph.add_edge([scientist, economist, psychologist, historian, engineer, legal_expert, medical_expert, technology_expert], summarizer)
     graph.add_edge(summarizer, END)
 
     # Invoke the graph with an example prompt and show the thinking process
