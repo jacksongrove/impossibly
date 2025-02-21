@@ -188,7 +188,7 @@ def __main__():
     graph.add_edge(summarizer, END)
 
     # Invoke the graph with an example prompt and show the thinking process
-    response = graph.invoke("Tell me how I can live my best life. Have all agents have a long discussion to find an answer.", show_thinking=True)
+    response = graph.invoke("Tell me how I can live my best life.", show_thinking=True)
     print(response)
 
 if __name__ == "__main__":

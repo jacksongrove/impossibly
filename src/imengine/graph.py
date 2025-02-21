@@ -101,7 +101,7 @@ class Graph:
                     self.edges[n1].append(n2)
 
 
-    def invoke(self, user_prompt: str = "", show_thinking: bool = False) -> str:
+    def invoke(self, user_prompt: str = "", files: list[str] = [], show_thinking: bool = False) -> str:
         # Output the user prompt if there are no agents defined
         if len(self.nodes) == 2: # (When only START and END nodes are defined)
             return prompt
@@ -113,17 +113,21 @@ class Graph:
         curr_node = self.edges[START][0]
         prompt = user_prompt
         author = 'user'
+        selected_files = files
         while curr_node != END:
             # Check if agent listens to other Agents (has shared memory)
             if curr_node.shared_memory:
                 prompt += f'\n\nPrevious messages: \n{global_memory.get_formatted(curr_node.shared_memory, curr_node.shared_memory)}' # TODO: Support distinct author and receiver Agent lists
 
             # Invoke the current node
-            output = curr_node.invoke(author, prompt, self.edges[curr_node], show_thinking)
+            output = curr_node.invoke(author, prompt, selected_files, self.edges[curr_node], show_thinking)
             # Route to intended node in the case of multiple branching edges
             i = 0
             if len(self.edges[curr_node]) > 1:
-                i, output = self._get_route(curr_node, output)
+                route_idx, output = self._get_route(curr_node, output)
+            
+            # Route files intended to be passed
+            selected_files, output = self._get_files(files, output)
 
             # Look ahead for the END node, return & display the final output once END is reached
             if self.edges[curr_node][i] == END:
@@ -138,15 +142,22 @@ class Graph:
             author = 'user'
             
         
-    def _get_route(self, node: Agent, output: str):
+    def _get_route(self, node: Agent, output: str) -> tuple[int, str]:
         '''
-        Extracts the desired route from a node's response and returns the index of the corresponding node in the node's edge list. This index is used to determine the next node to invoke. If a 
-        command to route to an agent is found, the command is removed from the output. If no command is found, a random route is chosen.
+        Extracts the desired routing command from a node's response and returns the index of the corresponding 
+        node in the node's edge list. The routing command is expected to be delimited by double backslashes (\\).
+        If a routing command is found, it is removed from the output. If the command is "END", the index corresponding
+        to the END command is returned. Otherwise, the function searches for an agent whose name matches the command.
+        If no valid routing command is found, a default route (index 0) is chosen.
         
-
         Args:
-            :node (Agent): The node to route from
-            :output (str): The Agent response to extract the desired route from. The name of the desired agent will be deliminated by a double backslash ('\\').
+            node (Agent): The node from which the routing command is being extracted. Its edge list contains the available routing options.
+            output (str): The agent's response that contains the routing command. The desired agent name should be delimited by double backslashes (e.g., '\\AgentName\\').
+        
+        Returns:
+            tuple: A tuple containing:
+                - int: The index of the chosen route in the node's edge list.
+                - str: The output string with the routing command removed.
         '''
         options = self.edges[node]
         # Regex from back of list to find agent names in delimited text
@@ -165,3 +176,46 @@ class Graph:
                         return i, output
         print("No route found. Choosing random route.")
         return 0, output
+
+
+    def _get_files(self, file_options: list[str], output: str) -> tuple[list[str], str]:
+        '''
+        Extracts all file command options from the agent's output and returns a list of file paths 
+        corresponding to the matched file options in the provided file_options list. The file commands 
+        are expected to be delimited by <<FILE>> and <</FILE>>. After extraction, all file command blocks 
+        are removed from the output. Only files that exist on the filesystem are returned.
+        
+        Args:
+            file_options (List[str]): A list of valid file paths that can be passed to the next agent.
+            output (str): The agent's response containing one or more file commands, each delimited by 
+                        <<FILE>> and <</FILE>>.
+            
+        Returns:
+            Tuple[List[str], str]: A tuple containing:
+                - A list of file paths (from file_options) that exist on the filesystem and were specified 
+                in the output.
+                - The output string with all file command blocks removed.
+        '''
+        # Precompute a mapping from option (trimmed) to its file path for O(1) lookups
+        option_to_file = {option.strip(): option for option in file_options}
+
+        # Find all file command matches (allowing multiple matches)
+        matches = re.findall(r'<<FILE>>(.*?)<</FILE>>', output, re.DOTALL)
+        valid_chosen_files = []
+
+        for match in matches:
+            option = match.strip()
+            if option in option_to_file:
+                file_path = option_to_file[option]
+                # Check if the file exists
+                if os.path.isfile(file_path):
+                    valid_chosen_files.append(file_path)
+                else:
+                    print(f"File '{file_path}' does not exist. Ignoring.")
+            else:
+                print(f"File option '{option}' not found in file_options.")
+        
+        # Clean the output of all file command blocks.
+        output = re.sub(r'<<FILE>>.*?<</FILE>>', '', output, flags=re.DOTALL)
+        
+        return valid_chosen_files, output
