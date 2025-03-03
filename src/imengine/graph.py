@@ -117,7 +117,7 @@ class Graph:
         while curr_node != END:
             # Check if agent listens to other Agents (has shared memory)
             if curr_node.shared_memory:
-                prompt += f'\n\nPrevious messages: \n{global_memory.get_formatted(curr_node.shared_memory, curr_node.shared_memory)}' # TODO: Support distinct author and receiver Agent lists
+                prompt += f'\n\nPrevious messages: \n{global_memory.get_formatted(curr_node.shared_memory, curr_node.shared_memory)}' # TODO: Support distinct shared memory from author and receiver Agent lists
 
             # Invoke the current node
             output = curr_node.invoke(author, prompt, selected_files, self.edges[curr_node], show_thinking)
@@ -209,6 +209,7 @@ class Graph:
                 file_path = option_to_file[option]
                 # Check if the file exists
                 if os.path.isfile(file_path):
+                    print("FILE SENT TO NEXT AGENT:     "+file_path)
                     valid_chosen_files.append(file_path)
                 else:
                     print(f"File '{file_path}' does not exist. Ignoring.")

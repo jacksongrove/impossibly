@@ -3,7 +3,7 @@ Defines individual agent types to be called within the graph structure.
 
 Author: Jackson Grove
 '''
-import os, shutil, textwrap
+import os, shutil, textwrap, base64
 from openai import OpenAI
 from openai import File
 from anthropic import Anthropic
@@ -206,6 +206,23 @@ class OpenAIAgent:
                 
         return file_objects
 
+    
+    def _encode_image(self, image_path: str) -> str:
+        '''
+        Helper function to encode images in Base64 encoding. Used for image inputs.
+        
+        Args:
+            image_path (str): Path to the image file
+            
+        Returns:
+            str: Base64 encoded string of the image
+        '''
+        try:
+            with open(image_path, "rb") as image_file:
+                return base64.b64encode(image_file.read()).decode("utf-8")
+        except Exception as e:
+            raise ValueError(f"Failed to encode image at {image_path}: {str(e)}")
+
 
     def invoke(self, author: str, chat_prompt: str = "", files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
         '''
@@ -250,26 +267,53 @@ class OpenAIAgent:
         '''
         assert author in ['system', 'assistant', 'user', 'function', 'tool', 'developer'], f"Invalid value: '{author}'. Supported values are: system, assistant, user, function, tool, developer"
         # Create File objects, designating for vision if file type is vision-compatable, otherwise use for RAG
-        files = self.init_input_files(files)
+        file_objs = self.init_input_files(files) if files else [] # Base64 encode
+        processed_image_files = []
+        for i, file in enumerate(file_objs):
+            if file.purpose == "vision":
+                encoded_file = self._encode_image(files[i]) # Pass the file path to be encoded as a Base64 string
+                processed_image_files.append(encoded_file)
+            elif file.purpose == "assistants": #TODO: Implement RAG for non-image files
+                continue
 
         if show_thinking:
             # Log the formatted system prompt and chat prompt
             self._log_thinking(chat_prompt)
 
-        # Build routing options, file options & respective commands
+        # Build routing options & respective commands
         routing_options = ""
         if edges and len(edges) > 1:
-            file_propagation = "## File Options:\n\tSelect the files you'd like to pass to the next agent. You can select more than one or none at all."
-            for file in files:
-                file_propagation += f"\n\tCommand: <<FILE>>{file}<</FILE>>"
             routing_options = "## Routing Options:\n\tPrint ONE of the following commands after your response to send your response to that agent. You are required to choose one."
             for agent in edges:
                 routing_options += f"\n\tCommand: '\\\\{agent.name if agent is not END else 'END'}\\\\'\tDescription: {agent.description if agent is not END else 'The end of the graph, to return the final response to the user.'}"
+        else:
+            routing_options = f"## Routing Disclosure: Your response will be routed to '{edges[0].name if edges[0] is not END else 'END'}'\tDescription: {edges[0].description if edges[0] is not END else 'The end of the graph, to return the final response to the user.'}"
+        # Build file propagation options & respective commands
+        file_propagation = ""
+        if files:
+            file_propagation = "## File Options:\n\tSelect the files you'd like to pass to the next agent. You can select more than one or none at all by typing these commands in your response."
+            for file in files:
+                file_propagation += f"\n\tCommand: <<FILE>>{file}<</FILE>>"
 
         # Add message to thread
-        self.messages.append(
-            {"role": author, "content": f'## System Prompt: {self.system_prompt}\n\n## Chat Prompt: {chat_prompt}\n\n{file_propagation}\n\n{routing_options}'}
-        )
+        content_payload = []
+        # Add the text component
+        content_payload.append({
+            "type": "text",
+            "text": f'## System Prompt: {self.system_prompt}\n\n## Chat Prompt: {chat_prompt}\n\n{file_propagation}\n\n{routing_options}'
+        })
+
+        # Append each vision image in the correct format
+        for encoded_image in processed_image_files:
+            content_payload.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}
+            })
+        
+        self.messages.append({
+            "role": author,
+            "content": content_payload
+        })
         
         # Create a run to execute newly added message
         response = self.client.chat.completions.create(
