@@ -3,7 +3,7 @@ Imagination Engine is an agentic orchestration framework for rapidly building ag
 
 This library is designed to be used as a backend for AI apps and automations, providing support for all major LLM providers and locally-hosted model endpoints.
 
-**This project is currently in development. More features and support is coming very soon.**
+**This project is currently in development. More features and support coming very soon.**
 
 # Getting Started
 ## Imports
