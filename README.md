@@ -1,7 +1,9 @@
-# imagination-engine
-An agentic orchestration library to enable easy creation of hyper-intelligent agentic architectures for higher-order tasks like idea generation &amp; critical thinking. This library is designed to be used as a backend for AI apps and automations, providing support for all major LLM providers in addition to locally-hosted model endpoints.
+# Imagination Engine
+Imagination Engine is an agentic orchestration framework for rapidly building agentic architectures in Python. It accelerates agentic development, empowering developers to craft architectures that enable LLMs to excel in higher-order tasks like idea generation and critical thinking.
 
-This project is currently in development. More features and support coming very soon.
+This library is designed to be used as a backend for AI apps and automations, providing support for all major LLM providers and locally-hosted model endpoints.
+
+**This project is currently in development. More features and support is coming very soon.**
 
 # Getting Started
 ## Imports
