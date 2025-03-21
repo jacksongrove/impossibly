@@ -3,11 +3,12 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Determine the lib directory
-lib_dir = Path(__file__).resolve().parent.parent / 'src' / 'imengine'
-sys.path.insert(0, str(lib_dir))
+# Get directory paths to interact with library modules. This will be changed to a package import in the future.
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+LIB_DIR = BASE_DIR / 'src' / 'imengine'
+sys.path.insert(0, str(LIB_DIR))
 
-# Import modules from your local package using absolute imports
+# Import modules
 from agent import Agent
 from graph import Graph
 from utils.start_end import START, END

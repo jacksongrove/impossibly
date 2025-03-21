@@ -3,11 +3,13 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Determine the lib directory
-lib_dir = Path(__file__).resolve().parent.parent / 'src' / 'imengine'
-sys.path.insert(0, str(lib_dir))
+# Get directory paths to interact with library modules. This will be changed to a package import in the future.
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+IMAGE_PATH = BASE_DIR / 'examples' / 'image_agent' / 'image_input.jpeg'
+LIB_DIR = BASE_DIR / 'src' / 'imengine'
+sys.path.insert(0, str(LIB_DIR))
 
-# Import modules from your local package using absolute imports
+# Import modules
 from agent import Agent
 from graph import Graph
 from utils.start_end import START, END
@@ -34,12 +36,11 @@ def __main__():
     # Initialize and build the graph
     graph = Graph()
     graph.add_node(agent)
-
     graph.add_edge(START, agent)
     graph.add_edge(agent, END)
 
     # Invoke the graph with an example prompt and show the thinking process
-    response = graph.invoke("What's this an image of?", files = ['examples/image_input.jpeg'], show_thinking=True)
+    response = graph.invoke("What's this an image of?", files=[str(IMAGE_PATH)], show_thinking=True)
     print(response)
 
 if __name__ == "__main__":
