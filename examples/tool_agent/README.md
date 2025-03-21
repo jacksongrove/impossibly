@@ -1,64 +1,95 @@
 # Tool Agent Example
 
-This example demonstrates how to create an agent that can use various tools to help users. The agent is equipped with three sample tools:
-1. A calculator that can add numbers
-2. A time tool that returns the current time
-3. A mock web search tool
+This example demonstrates how an agent can utilize various tools to perform actions and process information.
 
 ## Setup
 
-1. Create a virtual environment (recommended):
-```bash
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-```
+1. Create a virtual environment:
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+2. Install the required dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
 
-3. Make sure you have your environment variables set up in a `.env` file:
-```
-OPENAI_API_KEY=your_api_key_here
-```
+3. Set up your environment variables in a .env file:
+   ```
+   OPENAI_API_KEY=your_api_key_here
+   ```
 
-## Running the Example
-
-To run the example:
-```bash
-python tool_agent.py
-```
-
-This will demonstrate how an agent can use different tools to:
-- Perform calculations
-- Get the current time
-- Search for information (mock implementation)
+4. Run the example:
+   ```
+   python tool_agent.py
+   ```
 
 ## Customization
 
-You can modify the example to add your own tools by:
-1. Defining new tool functions
-2. Adding tool definitions to the `tools` list with:
-   - `name`: The name of the tool
-   - `description`: What the tool does
-   - `parameters`: The parameters the tool accepts
-   - `function`: The actual function to call
-3. Updating the agent's system prompt to include information about the new tools
+You can customize this example by adding your own tools. To create a new tool, you need to:
 
-## Tool Structure
+1. Define a function that implements the tool's functionality
+2. Create a Tool object with the function and its parameters
+3. Add the tool to the agent
 
-Each tool is defined as a dictionary with the following structure:
+### Creating Tools
+
+The `Tool` class provides a simple and lightweight way to define tools:
+
 ```python
-{
-    "name": "tool_name",
-    "description": "What the tool does",
-    "parameters": {
-        "param1": {
-            "type": "param_type",
-            "description": "What this parameter does"
+from utils.tools import Tool
+
+# Define a function that implements the tool
+def my_tool_function(param1, param2=0.0):
+    """Tool function implementation"""
+    return f"Result of processing {param1} and {param2}"
+
+# Create a tool with Python types
+my_tool = Tool(
+    name="my_tool",
+    description="Description of what my tool does",
+    function=my_tool_function,
+    parameters=[
+        {
+            "name": "param1",
+            "type": str,  # Python string type
+            "description": "First parameter description"
+        },
+        {
+            "name": "param2",
+            "type": float,  # Python float type
+            "description": "Second parameter description",
+            "required": False  # Optional parameter
         }
-    },
-    "function": actual_function
-}
+    ]
+)
 ```
+
+### Supported Parameter Types
+
+The system supports the following Python types directly:
+
+- `str`: For text values
+- `int`: For integer values
+- `float`: For floating-point numbers
+- `bool`: For boolean values
+- `list`: For arrays
+- `dict`: For objects/maps
+
+### Adding Tools to an Agent
+
+Once you've created your tools, add them to an agent:
+
+```python
+agent = Agent(
+    client,
+    model="gpt-4o",
+    name="MyToolAgent",
+    system_prompt="You are an agent that can use various tools...",
+    description="A helpful agent with tools",
+    tools=[my_tool, another_tool]
+)
+```
+
+The agent will automatically format the tools for the API and handle tool execution.

@@ -12,21 +12,21 @@ sys.path.insert(0, str(LIB_DIR))
 from agent import Agent
 from graph import Graph
 from utils.start_end import START, END
-from utils.tools import Tool, Parameter, ParameterType
+from utils.tools import Tool
 
 # Define our tools
-def calculate_sum(a: float, b: float) -> float:
+def calculate_sum(a, b):
     """Calculate the sum of two numbers."""
     return a + b
 
-def get_current_time() -> str:
+def get_current_time():
     """Get the current time in a readable format."""
     from datetime import datetime
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-def search_web(query: str) -> str:
-    """Search the web for a given query. This is a mock implementation."""
-    return f"Search results for '{query}': [This is a mock search result]"
+def count_rs(text):
+    """Count the number of 'R's (case-insensitive) in the provided text."""
+    return text.lower().count('r')
 
 def __main__():
     # Load environment variables from .env file
@@ -39,41 +39,46 @@ def __main__():
     from openai import OpenAI
     client = OpenAI(api_key=OPENAI_API_KEY)
 
-    # Define available tools
-    calculator_tool = Tool(
-        name="calculate_sum",
-        description="Calculate the sum of two numbers",
-        function=calculate_sum,
-        parameters=[
-            Parameter(
-                name="a",
-                type=ParameterType.NUMBER,
-                description="First number"
-            ),
-            Parameter(
-                name="b",
-                type=ParameterType.NUMBER,
-                description="Second number"
-            )
-        ]
-    )
-    get_time_tool = Tool(
+    # Define our tools
+    # Tool with no parameters
+    get_current_time_tool = Tool(
         name="get_current_time",
         description="Get the current time",
         function=get_current_time
     )
-    web_search_tool = Tool(
-        name="search_web",
-        description="Search the web for a given query",
-        function=search_web,
+        
+    # Tool with one string parameter
+    count_rs_tool = Tool(
+            name="count_rs",
+            description="Count the number of 'R's in the provided text",
+            function=lambda text: text.lower().count('r'),
+            parameters=[
+                {
+                    "name": "text",
+                    "type": str,
+                    "description": "The text in which to count the 'R's"
+                }
+            ]
+        )
+
+    # Tool with two float parameters
+    calculate_sum_tool = Tool(
+        name="calculate_sum",
+        description="Calculate the sum of two numbers",
+        function=calculate_sum,
         parameters=[
-            Parameter(
-                name="query",
-                type=ParameterType.STRING,
-                description="The search query"
-            )
-        ]
-    )
+                {
+                    "name": "a",
+                    "type": float,
+                    "description": "First number"
+                },
+                {
+                    "name": "b",
+                    "type": float,
+                    "description": "Second number"
+                }
+            ]
+        )
     
     # Initialize Agent with tools
     agent = Agent(
@@ -84,13 +89,13 @@ def __main__():
             You are an agent that can use various tools to help users. You can:
             1. Calculate sums using the calculate_sum tool
             2. Get the current time using the get_current_time tool
-            3. Search the web using the search_web tool
+            3. Count the number of 'R's in the provided text using the count_rs tool
 
             When a user asks for something that requires using a tool, use the appropriate tool and explain what you're doing.
             Always provide clear explanations of your actions and the results.
         """,
         description="A helpful agent that can use various tools to assist users",
-        tools=[calculator_tool, get_time_tool, web_search_tool] # Add all our tools to the agent
+        tools=[get_current_time_tool, count_rs_tool, calculate_sum_tool]
     )
 
     # Initialize and build the graph
@@ -99,12 +104,12 @@ def __main__():
     graph.add_edge(START, agent)
     graph.add_edge(agent, END)
 
-    # Test all 3 functions with 3 different prompts
+    # Test prompts for each tool
     response = graph.invoke("What is 5 plus 3?", show_thinking=True)
     print(f"Response: {response}")
     response = graph.invoke("What time is it?", show_thinking=True)
     print(f"Response: {response}")
-    response = graph.invoke("Search for information about artificial intelligence", show_thinking=True)
+    response = graph.invoke("How many R's are in the word 'strawberry'?", show_thinking=True)
     print(f"Response: {response}")
 
 if __name__ == "__main__":
