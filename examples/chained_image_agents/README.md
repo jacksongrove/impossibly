@@ -1,6 +1,6 @@
 # Chained Image Agents Example
 
-This example demonstrates how to create a chain of image generation agents that can work together to create complex images.
+This example demonstrates how to create a chain of image generation agents that can work together to perform deep analysis of images.
 
 ## Setup
 
