@@ -9,6 +9,7 @@ from openai import File
 from anthropic import Anthropic
 from utils.start_end import END
 from utils.memory import Memory
+from utils.tools import Tool, format_tools_for_api
 
 #TODO: Add shared memory to agent (list of agents to read memory from)
 #TODO: Add tool use
@@ -31,6 +32,7 @@ class Agent:
                                        Defaults to "You are a helpful assistant.".
         description (str, optional): An additional description for the agent. Defaults to an empty string.
         shared_memory (list, optional): A list of agents to read memory from. Defaults to an empty list.
+        tools (list[Tool], optional): A list of Tool instances that the agent can use. Defaults to an empty list.
 
     Attributes:
         client: The underlying agent instance (either OpenAIAgent or AnthropicAgent).
@@ -39,16 +41,17 @@ class Agent:
         system_prompt (str): The system prompt configuring the agent's behavior.
         description (str): An additional description for the agent.
         shared_memory (list of Agents): A list of agents to read memory from.
+        tools (list[Tool]): A list of tools available to the agent.
 
     Raises:
         ValueError: If the provided client is not an instance of either OpenAI or Anthropic.
     '''
 
-    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: list[str] = [], shared_memory: list['Agent'] = None) -> None:
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: list[str] = [], shared_memory: list['Agent'] = None, tools: list[Tool] = []) -> None:
         if isinstance(client, OpenAI):
-            self.client = OpenAIAgent(client, system_prompt, model, name, description, files)
+            self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
         elif isinstance(client, Anthropic):
-            self.client = AnthropicAgent(client, system_prompt, model, name, description)
+            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools)
         else:
             raise ValueError("Client must be an instance of OpenAI or Anthropic")
         self.model = self.client.model
@@ -58,14 +61,28 @@ class Agent:
         self.description = self.client.description
         self.shared_memory = shared_memory
         self.files = self.client.files
+        self.tools = tools
 
         
     def invoke(self, author: str, prompt: str, files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+        '''
+        Invokes the agent with the given prompt and returns the response.
+        
+        Args:
+            author (str): The author of the message ('user', 'system', 'assistant', etc.).
+            prompt (str): The prompt to send to the agent.
+            files (list[str], optional): A list of file paths to include. Defaults to [].
+            edges (list[Agent], optional): A list of agents that this agent can route to. Defaults to None.
+            show_thinking (bool, optional): Whether to show the agent's thinking process. Defaults to False.
+            
+        Returns:
+            str: The agent's response.
+        '''
         return self.client.invoke(author, prompt, files, edges, show_thinking)
 
 
 class OpenAIAgent:
-    def __init__(self, client: OpenAI, system_prompt: str, model: str = "gpt-4o", name: str = "agent", description: str = "A general purpose agent", routing_instructions: str = "", files: list[str] = []) -> None:
+    def __init__(self, client: OpenAI, system_prompt: str, model: str = "gpt-4o", name: str = "agent", description: str = "A general purpose agent", routing_instructions: str = "", files: list[str] = [], tools: list[Tool] = []) -> None:
         self.client = client
         self.model = model
         self.name = name
@@ -76,6 +93,7 @@ class OpenAIAgent:
             {"role": "system", "content": system_prompt}
         ]
         self.files = self.init_rag_files(files)
+        self.tools = tools
 
 
     def init_rag_files(self, files: list[str]) -> list['File']:
@@ -110,7 +128,7 @@ class OpenAIAgent:
             try:
                 # Assert that the file extension is supported.
                 assert ext in supported_files, (
-                    f"Unsupported file type '{ext}'. Accepted types: {", ".join(supported_files.keys())}"
+                    f"Unsupported file type '{ext}'. Accepted types: {', '.join(supported_files.keys())}"
                 )
                 # Create the file object using the appropriate purpose
                 file_obj = self.client.files.create(
@@ -243,6 +261,11 @@ class OpenAIAgent:
                 those in the shared_memory attribute)
             <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+            ## Available Tools:
+                {tool1_name}: {tool1_description}
+                {tool2_name}: {tool2_description}
+                (rest of tools continued...)
+
             ## File options:
                 Select the files you'd like to pass to the next agent. You can select more than one or none at all.
                 Command: <<FILE>>option1<</FILE>>
@@ -266,6 +289,7 @@ class OpenAIAgent:
             Text response from the model (string)
         '''
         assert author in ['system', 'assistant', 'user', 'function', 'tool', 'developer'], f"Invalid value: '{author}'. Supported values are: system, assistant, user, function, tool, developer"
+        
         # Create File objects, designating for vision if file type is vision-compatable, otherwise use for RAG
         file_objs = self.init_input_files(files) if files else [] # Base64 encode
         processed_image_files = []
@@ -288,6 +312,7 @@ class OpenAIAgent:
                 routing_options += f"\n\tCommand: '\\\\{agent.name if agent is not END else 'END'}\\\\'\tDescription: {agent.description if agent is not END else 'The end of the graph, to return the final response to the user.'}"
         else:
             routing_options = f"## Routing Disclosure: Your response will be routed to '{edges[0].name if edges[0] is not END else 'END'}'\tDescription: {edges[0].description if edges[0] is not END else 'The end of the graph, to return the final response to the user.'}"
+
         # Build file propagation options & respective commands
         file_propagation = ""
         if files:
@@ -295,12 +320,30 @@ class OpenAIAgent:
             for file in files:
                 file_propagation += f"\n\tCommand: <<FILE>>{file}<</FILE>>"
 
+        # Build tools section
+        tools_section = ""
+        if self.tools:
+            tools_section = "## Available Tools:\n\tYou can use the following tools by calling them with their parameters:\n"
+            for tool in self.tools:
+                tools_section += f"\t{tool.name}: {tool.description}\n"
+                if tool.parameters:
+                    tools_section += "\tParameters:\n"
+                    for param in tool.parameters:
+                        # Handle dictionary parameters
+                        if isinstance(param, dict):
+                            param_name = param["name"]
+                            param_desc = param["description"]
+                            param_type = param["type"]
+                            if isinstance(param_type, type):
+                                param_type = param_type.__name__
+                        tools_section += f"\t\t- {param_name}: {param_desc} ({param_type})\n"
+
         # Add message to thread
         content_payload = []
         # Add the text component
         content_payload.append({
             "type": "text",
-            "text": f'## System Prompt: {self.system_prompt}\n\n## Chat Prompt: {chat_prompt}\n\n{file_propagation}\n\n{routing_options}'
+            "text": f'## System Prompt: {self.system_prompt}\n\n## Chat Prompt: {chat_prompt}\n\n{tools_section}\n\n{file_propagation}\n\n{routing_options}'
         })
 
         # Append each vision image in the correct format
@@ -316,12 +359,99 @@ class OpenAIAgent:
         })
         
         # Create a run to execute newly added message
+        api_tools = format_tools_for_api(self.tools) if self.tools else None
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=self.messages
+            messages=self.messages,
+            tools=api_tools
         )
-        return response.choices[0].message.content
+        
+        # Add the model's response to the message history
+        assistant_message = response.choices[0].message
+        self.messages.append(assistant_message)
+        
+        # Handle tool calls if present
+        if hasattr(assistant_message, 'tool_calls') and assistant_message.tool_calls:
+            tool_calls = assistant_message.tool_calls
+            tool_outputs = []
+            
+            for tool_call in tool_calls:
+                # Find the tool and execute it
+                tool = next((t for t in self.tools if t.name == tool_call.function.name), None)
+                if tool:
+                    # Parse the arguments
+                    import json
+                    try:
+                        args = json.loads(tool_call.function.arguments)
+                        # Execute the tool
+                        result = tool.execute(**args)
+                        tool_outputs.append({
+                            "tool_call_id": tool_call.id,
+                            "output": str(result)
+                        })
+                    except json.JSONDecodeError:
+                        tool_outputs.append({
+                            "tool_call_id": tool_call.id,
+                            "output": f"Error: Invalid arguments for tool {tool_call.function.name}"
+                        })
+                    except Exception as e:
+                        tool_outputs.append({
+                            "tool_call_id": tool_call.id,
+                            "output": f"Error executing tool {tool_call.function.name}: {str(e)}"
+                        })
+                else:
+                    tool_outputs.append({
+                        "tool_call_id": tool_call.id,
+                        "output": f"Error: Tool {tool_call.function.name} not found"
+                    })
+            
+            # Add the tool outputs to the message history
+            if tool_outputs:
+                for output in tool_outputs:
+                    self.messages.append({
+                        "role": "tool",
+                        "tool_call_id": output["tool_call_id"],
+                        "content": output["output"]
+                    })
+                # Get the model's response after tool execution
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=self.messages
+                )
+                # Update message history with the model's post-tool call output (informed with tool call results)
+                self.messages.append(response.choices[0].message)
+                return response.choices[0].message.content
+        
+        return assistant_message.content
 
+    def _execute_tool(self, tool_call) -> str:
+        '''
+        Executes a tool call and returns its result.
+
+        Args:
+            tool_call: The tool call object from the model's response.
+
+        Returns:
+            str: The result of the tool execution.
+        '''
+        # Find the tool in the available tools
+        tool = next((t for t in self.tools if t.name == tool_call.function.name), None)
+        if not tool:
+            return f"Error: Tool {tool_call.function.name} not found."
+
+        # Parse the arguments
+        import json
+        try:
+            args = json.loads(tool_call.function.arguments)
+        except json.JSONDecodeError:
+            return f"Error: Invalid arguments for tool {tool_call.function.name}"
+
+        # Execute the tool's function
+        try:
+            result = tool.execute(**args)
+            return str(result)
+        except Exception as e:
+            return f"Error executing tool {tool_call.function.name}: {str(e)}"
 
     def _log_thinking(self, chat_prompt: str) -> None:
         '''
@@ -355,18 +485,28 @@ class OpenAIAgent:
     
 
 class AnthropicAgent:
-    def __init__(self, client: Anthropic, system_prompt: str, model: str = "claude-3-5-sonnet-20240620", name: str = "agent") -> None:
+    def __init__(self, client: Anthropic, system_prompt: str, model: str = "claude-3-5-sonnet-20240620", name: str = "agent", description: str = "", tools: list[Tool] = []) -> None:
         self.client = client
         self.model = model
         self.name = name
         self.system_prompt = system_prompt
+        self.description = description
         self.messages = [{"role": "system", "content": system_prompt}]
+        self.tools = tools
+        # Anthropic agents don't have files currently
+        self.files = []
 
-    def invoke(self, author: str, chat_prompt: str = "", show_thinking: bool = False) -> str:
+    def invoke(self, author: str, chat_prompt: str = "", files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
         '''
         Prompts the model, returning a text response
 
         Args:
             :chat_prompt (string): The prompt to send to the model.
+            :edges (list[Agent]): A list of agents to route to.
+            :show_thinking (bool): Whether to print the system prompt and chat prompt to the console.
+            
+        Returns:
+            str: The response from the model.
         '''
-        pass
+        # TODO: Implement Anthropic API integration with tool support
+        raise NotImplementedError("Anthropic agent implementation is not complete yet.")
