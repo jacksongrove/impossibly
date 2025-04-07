@@ -2,33 +2,42 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+from openai import AsyncOpenAI
 
 # Get directory paths to interact with library modules. This will be changed to a package import in the future.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-LIB_DIR = BASE_DIR / 'src' / 'imengine'
+LIB_DIR = BASE_DIR / 'src'
 sys.path.insert(0, str(LIB_DIR))
 
 # Import modules
-from agent import Agent
-from graph import Graph
-from utils.start_end import START, END
-from utils.tools import Tool
+from imengine.agent import Agent
+from imengine.graph import Graph
+from imengine.utils.start_end import START, END
+from imengine.utils.tools import Tool
 
 # Define our tools
 def calculate_sum(a, b):
     """Calculate the sum of two numbers."""
-    return a + b
+    result = a + b
+    return result
 
 def get_current_time():
     """Get the current time in a readable format."""
     from datetime import datetime
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    result = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return result
 
 def count_rs(text):
     """Count the number of 'R's (case-insensitive) in the provided text."""
-    return text.lower().count('r')
+    # Count uppercase R's
+    uppercase_count = text.count('R')
+    # Count lowercase r's
+    lowercase_count = text.count('r')
+    # Total count (both uppercase and lowercase)
+    result = uppercase_count + lowercase_count
+    return result
 
-def __main__():
+def main():
     # Load environment variables from .env file
     load_dotenv()
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -36,8 +45,7 @@ def __main__():
         raise ValueError("OpenAI API key is not set. Please check your .env file.")
 
     # Initialize the OpenAI client
-    from openai import OpenAI
-    client = OpenAI(api_key=OPENAI_API_KEY)
+    client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
     # Define our tools
     # Tool with no parameters
@@ -51,7 +59,7 @@ def __main__():
     count_rs_tool = Tool(
             name="count_rs",
             description="Count the number of 'R's in the provided text",
-            function=lambda text: text.lower().count('r'),
+            function=count_rs,
             parameters=[
                 {
                     "name": "text",
@@ -113,4 +121,4 @@ def __main__():
     print(f"Response: {response}")
 
 if __name__ == "__main__":
-    __main__() 
+    main() 

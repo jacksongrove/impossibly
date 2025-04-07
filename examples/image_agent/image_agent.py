@@ -6,13 +6,13 @@ from dotenv import load_dotenv
 # Get directory paths to interact with library modules. This will be changed to a package import in the future.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 IMAGE_PATH = BASE_DIR / 'examples' / 'image_agent' / 'image_input.jpeg'
-LIB_DIR = BASE_DIR / 'src' / 'imengine'
+LIB_DIR = BASE_DIR / 'src'
 sys.path.insert(0, str(LIB_DIR))
 
 # Import modules
-from agent import Agent
-from graph import Graph
-from utils.start_end import START, END
+from imengine.agent import Agent
+from imengine.graph import Graph
+from imengine.utils.start_end import START, END
 
 def __main__():
     # Load environment variables from .env file

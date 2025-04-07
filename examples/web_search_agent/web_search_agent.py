@@ -10,14 +10,14 @@ from dotenv import load_dotenv
 
 # Get directory paths to interact with library modules. This will be changed to a package import in the future.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-LIB_DIR = BASE_DIR / 'src' / 'imengine'
+LIB_DIR = BASE_DIR / 'src'
 sys.path.insert(0, str(LIB_DIR))
 
 # Import modules
-from agent import Agent
-from graph import Graph
-from utils.start_end import START, END
-from utils.tools import Tool
+from imengine.agent import Agent
+from imengine.graph import Graph
+from imengine.utils.start_end import START, END
+from imengine.utils.tools import Tool
 
 # Load environment variables
 load_dotenv()
@@ -84,7 +84,7 @@ def format_search_results(search_results, query):
     
     return formatted_results
 
-def __main__():
+def main():
     # Load environment variables from .env file
     load_dotenv()
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -96,8 +96,8 @@ def __main__():
         raise ValueError("Tavily API key is not set. Please check your .env file.")
 
     # Initialize the OpenAI client
-    from openai import OpenAI
-    client = OpenAI(api_key=OPENAI_API_KEY)
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
     # Define our web search tool
     web_search_tool = Tool(
@@ -174,4 +174,4 @@ def __main__():
     print(f"Response: {response}")
 
 if __name__ == "__main__":
-    __main__() 
+    main() 

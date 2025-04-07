@@ -7,9 +7,11 @@ communicate with one another.
 Author: Jackson Grove
 '''
 import re
-from agent import *
-from utils.start_end import START, END
-from utils.memory import Memory
+import asyncio
+import os
+from imengine.agent import *
+from imengine.utils.start_end import START, END
+from imengine.utils.memory import Memory
 
 class Graph:
     '''
@@ -102,9 +104,35 @@ class Graph:
 
 
     def invoke(self, user_prompt: str = "", files: list[str] = [], show_thinking: bool = False) -> str:
+        """
+        Public method that transparently handles both sync and async execution.
+        
+        This method detects if it's being called from an async context and acts accordingly.
+        If called from sync code, it runs the async implementation using asyncio.run().
+        If called from async code, it returns a coroutine that can be awaited.
+        
+        This provides a unified API that works for both sync and async callers.
+        """
+        try:
+            # Check if we're in an event loop
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # We're being called from an async context
+                # Return the coroutine for the caller to await
+                return self._invoke_async(user_prompt, files, show_thinking)
+            else:
+                # No running event loop, create one
+                return asyncio.run(self._invoke_async(user_prompt, files, show_thinking))
+        except RuntimeError:
+            # No event loop exists, create one
+            return asyncio.run(self._invoke_async(user_prompt, files, show_thinking))
+
+
+    async def _invoke_async(self, user_prompt: str = "", files: list[str] = [], show_thinking: bool = False) -> str:
+        """Internal async implementation of the invoke method."""
         # Output the user prompt if there are no agents defined
         if len(self.nodes) == 2: # (When only START and END nodes are defined)
-            return prompt
+            return user_prompt
         
         # Create a global memory for the graph
         global_memory = Memory()
@@ -117,10 +145,11 @@ class Graph:
         while curr_node != END:
             # Check if agent listens to other Agents (has shared memory)
             if curr_node.shared_memory:
-                prompt += f'\n\nPrevious messages: \n{global_memory.get_formatted(curr_node.shared_memory, curr_node.shared_memory)}' # TODO: Support distinct shared memory from author and receiver Agent lists
+                prompt += f'\n\nPrevious messages: \n{await global_memory.get_formatted(curr_node.shared_memory, curr_node.shared_memory)}'
 
             # Invoke the current node
-            output = curr_node.invoke(author, prompt, selected_files, self.edges[curr_node], show_thinking)
+            output = await curr_node.invoke(author, prompt, selected_files, self.edges[curr_node], show_thinking)
+            
             # Route to intended node in the case of multiple branching edges
             i = 0
             if len(self.edges[curr_node]) > 1:
@@ -134,14 +163,15 @@ class Graph:
                 return output
 
             # Update global memory
-            global_memory.add(curr_node, self.edges[curr_node][i], output)
+            await global_memory.add(curr_node, self.edges[curr_node][i], output)
 
             # Continue executing through the graph until END is reached
             curr_node = self.edges[curr_node][i]
             prompt = output
             author = 'user'
-            
         
+        return None
+    
     def _get_route(self, node: Agent, output: str) -> tuple[int, str]:
         '''
         Extracts the desired routing command from a node's response and returns the index of the corresponding 

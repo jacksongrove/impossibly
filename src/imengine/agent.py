@@ -3,13 +3,13 @@ Defines individual agent types to be called within the graph structure.
 
 Author: Jackson Grove
 '''
-import os, shutil, textwrap, base64
-from openai import OpenAI
+import os, shutil, textwrap, base64, asyncio, inspect
+from openai import AsyncOpenAI, OpenAI
 from openai import File
-from anthropic import Anthropic
-from utils.start_end import END
-from utils.memory import Memory
-from utils.tools import Tool, format_tools_for_api
+from anthropic import AsyncAnthropic, Anthropic
+from imengine.utils.start_end import END
+from imengine.utils.memory import Memory
+from imengine.utils.tools import Tool, format_tools_for_api
 
 #TODO: Add shared memory to agent (list of agents to read memory from)
 #TODO: Add tool use
@@ -48,12 +48,12 @@ class Agent:
     '''
 
     def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: list[str] = [], shared_memory: list['Agent'] = None, tools: list[Tool] = []) -> None:
-        if isinstance(client, OpenAI):
+        if isinstance(client, (AsyncOpenAI, OpenAI)):
             self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
-        elif isinstance(client, Anthropic):
+        elif isinstance(client, (AsyncAnthropic, Anthropic)):
             self.client = AnthropicAgent(client, system_prompt, model, name, description, tools)
         else:
-            raise ValueError("Client must be an instance of OpenAI or Anthropic")
+            raise ValueError("Client must be an instance of AsyncOpenAI, OpenAI, AsyncAnthropic, or Anthropic")
         self.model = self.client.model
         self.name = self.client.name
         self.system_prompt = self.client.system_prompt
@@ -63,10 +63,15 @@ class Agent:
         self.files = self.client.files
         self.tools = tools
 
-        
     def invoke(self, author: str, prompt: str, files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
         '''
-        Invokes the agent with the given prompt and returns the response.
+        Public method that transparently handles both sync and async execution.
+        
+        This method detects if it's being called from an async context and acts accordingly.
+        If called from sync code, it runs the async implementation using asyncio.run().
+        If called from async code, it returns a coroutine that can be awaited.
+        
+        This provides a unified API that works for both sync and async callers.
         
         Args:
             author (str): The author of the message ('user', 'system', 'assistant', etc.).
@@ -78,12 +83,41 @@ class Agent:
         Returns:
             str: The agent's response.
         '''
-        return self.client.invoke(author, prompt, files, edges, show_thinking)
+        try:
+            # Check if we're in an event loop
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # We're being called from an async context
+                # Return the coroutine for the caller to await
+                return self._invoke_async(author, prompt, files, edges, show_thinking)
+            else:
+                # No running event loop, create one
+                return asyncio.run(self._invoke_async(author, prompt, files, edges, show_thinking))
+        except RuntimeError:
+            # No event loop exists, create one
+            return asyncio.run(self._invoke_async(author, prompt, files, edges, show_thinking))
+
+    async def _invoke_async(self, author: str, prompt: str, files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+        '''
+        Internal async implementation of invoke.
+        
+        Args:
+            author (str): The author of the message ('user', 'system', 'assistant', etc.).
+            prompt (str): The prompt to send to the agent.
+            files (list[str], optional): A list of file paths to include. Defaults to [].
+            edges (list[Agent], optional): A list of agents that this agent can route to. Defaults to None.
+            show_thinking (bool, optional): Whether to show the agent's thinking process. Defaults to False.
+            
+        Returns:
+            str: The agent's response.
+        '''
+        return await self.client.invoke(author, prompt, files, edges, show_thinking)
 
 
 class OpenAIAgent:
-    def __init__(self, client: OpenAI, system_prompt: str, model: str = "gpt-4o", name: str = "agent", description: str = "A general purpose agent", routing_instructions: str = "", files: list[str] = [], tools: list[Tool] = []) -> None:
+    def __init__(self, client: AsyncOpenAI | OpenAI, system_prompt: str, model: str = "gpt-4o", name: str = "agent", description: str = "A general purpose agent", routing_instructions: str = "", files: list[str] = [], tools: list[Tool] = []) -> None:
         self.client = client
+        self.is_async = isinstance(client, AsyncOpenAI)
         self.model = model
         self.name = name
         self.system_prompt = system_prompt
@@ -92,31 +126,18 @@ class OpenAIAgent:
         self.messages = [
             {"role": "system", "content": system_prompt}
         ]
-        self.files = self.init_rag_files(files)
+        
+        # Initialize RAG files differently depending on sync/async client
+        if self.is_async:
+            self.files = asyncio.run(self.init_rag_files_async(files)) if files else []
+        else:
+            self.files = self.init_rag_files_sync(files) if files else []
+            
         self.tools = tools
 
-
-    def init_rag_files(self, files: list[str]) -> list['File']:
+    async def init_rag_files_async(self, files: list[str]) -> list['File']:
         '''
-        Initializes and uploads files for Retrieval-Augmented Generation (RAG) purposes.
-
-        This method processes a list of file paths, validates their extensions against a predefined set of supported file types, and uploads them to the OpenAI API with the purpose set to 
-        "assistants". Uploaded files are returned as OpenAI File objects.
-
-        Args:
-            files (list[str]): A list of file paths to be uploaded for RAG purposes.
-
-        Returns:
-            list[File]: A list of OpenAI File objects created by the OpenAI API.
-
-        Raises:
-            AssertionError: If a file's extension is not in the supported file types.
-            Exception: If an error occurs during the file upload process.
-
-        Notes:
-            - Supported file types include text documents, images, code files, and other formats compatible with RAG workflows (e.g., `.txt`, `.pdf`, `.json`).
-            - Files with unsupported extensions are skipped, and an error message is logged.
-            - Ensure the provided file paths are valid and accessible.
+        Asynchronously initializes and uploads files for Retrieval-Augmented Generation (RAG) purposes.
         '''
         # Mapping of supported file extensions to their corresponding purpose
         supported_files = [".c", ".cs", ".cpp", ".doc", ".docx", ".html", ".java", ".json", ".md", ".pdf", ".php", ".pptx", ".py", ".rb", ".tex", ".txt", ".css", ".js", ".sh", ".ts", ".png", ".jpg", ".jpeg", ".gif", ".webp"]
@@ -128,7 +149,36 @@ class OpenAIAgent:
             try:
                 # Assert that the file extension is supported.
                 assert ext in supported_files, (
-                    f"Unsupported file type '{ext}'. Accepted types: {', '.join(supported_files.keys())}"
+                    f"Unsupported file type '{ext}'. Accepted types: {', '.join(supported_files)}"
+                )
+                # Create the file object using the appropriate purpose
+                file_obj = await self.client.files.create(
+                    file=open(path, "rb"),
+                    purpose="assistants"
+                )
+                file_objects.append(file_obj)
+            except AssertionError as ae:
+                print(ae)
+            except Exception as ex:
+                print(f"Error processing {path}: {ex}")
+                
+        return file_objects
+    
+    def init_rag_files_sync(self, files: list[str]) -> list['File']:
+        '''
+        Synchronously initializes and uploads files for Retrieval-Augmented Generation (RAG) purposes.
+        '''
+        # Mapping of supported file extensions to their corresponding purpose
+        supported_files = [".c", ".cs", ".cpp", ".doc", ".docx", ".html", ".java", ".json", ".md", ".pdf", ".php", ".pptx", ".py", ".rb", ".tex", ".txt", ".css", ".js", ".sh", ".ts", ".png", ".jpg", ".jpeg", ".gif", ".webp"]
+        file_objects = []
+        for path in files:
+            if not path:
+                continue
+            ext = os.path.splitext(path)[1].lower()
+            try:
+                # Assert that the file extension is supported.
+                assert ext in supported_files, (
+                    f"Unsupported file type '{ext}'. Accepted types: {', '.join(supported_files)}"
                 )
                 # Create the file object using the appropriate purpose
                 file_obj = self.client.files.create(
@@ -142,7 +192,6 @@ class OpenAIAgent:
                 print(f"Error processing {path}: {ex}")
                 
         return file_objects
-    
 
     def init_input_files(self, files: list[str]) -> list['File']:
         '''
@@ -224,235 +273,6 @@ class OpenAIAgent:
                 
         return file_objects
 
-    
-    def _encode_image(self, image_path: str) -> str:
-        '''
-        Helper function to encode images in Base64 encoding. Used for image inputs.
-        
-        Args:
-            image_path (str): Path to the image file
-            
-        Returns:
-            str: Base64 encoded string of the image
-        '''
-        try:
-            with open(image_path, "rb") as image_file:
-                return base64.b64encode(image_file.read()).decode("utf-8")
-        except Exception as e:
-            raise ValueError(f"Failed to encode image at {image_path}: {str(e)}")
-
-
-    def invoke(self, author: str, chat_prompt: str = "", files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
-        '''
-        Prompts the model, returning a text response. System instructions, routing options and chat history are aggregated into the prompt in the following format:
-            """
-            ## System Instructions:
-                {system_prompt}
-
-            ## Chat Prompt:
-                {chat_prompt}
-            
-            >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-            ## Previous conversations:
-                {example agent 1} -> {example agent 2}: {content}
-                {example agent 1} -> {example agent 3}: {content}
-                {example agent 2} -> {example agent 1}: {content}
-                (rest of chat history continued...  NOTE: This section will only appear if the agent has a shared memory with other agents. The Agent conversations that appear will be limited to 
-                those in the shared_memory attribute)
-            <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-            ## Available Tools:
-                {tool1_name}: {tool1_description}
-                {tool2_name}: {tool2_description}
-                (rest of tools continued...)
-
-            ## File options:
-                Select the files you'd like to pass to the next agent. You can select more than one or none at all.
-                Command: <<FILE>>option1<</FILE>>
-                Command: <<FILE>>option2<</FILE>>
-                (rest of file options continued...)
-
-            ## Routing Options:
-                Print ONE of the following commands after your response to send your response to that agent. You are required to choose one.
-                Command: '\\\\option1\\\\'  Description: {description}
-                Command: '\\\\option2\\\\'  Description: {description}
-                (rest of routing options continued...)
-            """
-        NOTE: This is all encapsulated in the list of threaded message history then passed to the model.
-
-        Args:
-            :chat_prompt (string): The prompt to send to the model.
-            :edges (list[Agent]): A list of agents to route to.
-            :show_thinking (bool): Whether to print the system prompt and chat prompt to the console.
-
-        Returns:
-            Text response from the model (string)
-        '''
-        assert author in ['system', 'assistant', 'user', 'function', 'tool', 'developer'], f"Invalid value: '{author}'. Supported values are: system, assistant, user, function, tool, developer"
-        
-        # Create File objects, designating for vision if file type is vision-compatable, otherwise use for RAG
-        file_objs = self.init_input_files(files) if files else [] # Base64 encode
-        processed_image_files = []
-        for i, file in enumerate(file_objs):
-            if file.purpose == "vision":
-                encoded_file = self._encode_image(files[i]) # Pass the file path to be encoded as a Base64 string
-                processed_image_files.append(encoded_file)
-            elif file.purpose == "assistants": #TODO: Implement RAG for non-image files
-                continue
-
-        if show_thinking:
-            # Log the formatted system prompt and chat prompt
-            self._log_thinking(chat_prompt)
-
-        # Build routing options & respective commands
-        routing_options = ""
-        if edges and len(edges) > 1:
-            routing_options = "## Routing Options:\n\tPrint ONE of the following commands after your response to send your response to that agent. You are required to choose one."
-            for agent in edges:
-                routing_options += f"\n\tCommand: '\\\\{agent.name if agent is not END else 'END'}\\\\'\tDescription: {agent.description if agent is not END else 'The end of the graph, to return the final response to the user.'}"
-        else:
-            routing_options = f"## Routing Disclosure: Your response will be routed to '{edges[0].name if edges[0] is not END else 'END'}'\tDescription: {edges[0].description if edges[0] is not END else 'The end of the graph, to return the final response to the user.'}"
-
-        # Build file propagation options & respective commands
-        file_propagation = ""
-        if files:
-            file_propagation = "## File Options:\n\tSelect the files you'd like to pass to the next agent. You can select more than one or none at all by typing these commands in your response."
-            for file in files:
-                file_propagation += f"\n\tCommand: <<FILE>>{file}<</FILE>>"
-
-        # Build tools section
-        tools_section = ""
-        if self.tools:
-            tools_section = "## Available Tools:\n\tYou can use the following tools by calling them with their parameters:\n"
-            for tool in self.tools:
-                tools_section += f"\t{tool.name}: {tool.description}\n"
-                if tool.parameters:
-                    tools_section += "\tParameters:\n"
-                    for param in tool.parameters:
-                        # Handle dictionary parameters
-                        if isinstance(param, dict):
-                            param_name = param["name"]
-                            param_desc = param["description"]
-                            param_type = param["type"]
-                            if isinstance(param_type, type):
-                                param_type = param_type.__name__
-                        tools_section += f"\t\t- {param_name}: {param_desc} ({param_type})\n"
-
-        # Add message to thread
-        content_payload = []
-        # Add the text component
-        content_payload.append({
-            "type": "text",
-            "text": f'## System Prompt: {self.system_prompt}\n\n## Chat Prompt: {chat_prompt}\n\n{tools_section}\n\n{file_propagation}\n\n{routing_options}'
-        })
-
-        # Append each vision image in the correct format
-        for encoded_image in processed_image_files:
-            content_payload.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}
-            })
-        
-        self.messages.append({
-            "role": author,
-            "content": content_payload
-        })
-        
-        # Create a run to execute newly added message
-        api_tools = format_tools_for_api(self.tools) if self.tools else None
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=self.messages,
-            tools=api_tools
-        )
-        
-        # Add the model's response to the message history
-        assistant_message = response.choices[0].message
-        self.messages.append(assistant_message)
-        
-        # Handle tool calls if present
-        if hasattr(assistant_message, 'tool_calls') and assistant_message.tool_calls:
-            tool_calls = assistant_message.tool_calls
-            tool_outputs = []
-            
-            for tool_call in tool_calls:
-                # Find the tool and execute it
-                tool = next((t for t in self.tools if t.name == tool_call.function.name), None)
-                if tool:
-                    # Parse the arguments
-                    import json
-                    try:
-                        args = json.loads(tool_call.function.arguments)
-                        # Execute the tool
-                        result = tool.execute(**args)
-                        tool_outputs.append({
-                            "tool_call_id": tool_call.id,
-                            "output": str(result)
-                        })
-                    except json.JSONDecodeError:
-                        tool_outputs.append({
-                            "tool_call_id": tool_call.id,
-                            "output": f"Error: Invalid arguments for tool {tool_call.function.name}"
-                        })
-                    except Exception as e:
-                        tool_outputs.append({
-                            "tool_call_id": tool_call.id,
-                            "output": f"Error executing tool {tool_call.function.name}: {str(e)}"
-                        })
-                else:
-                    tool_outputs.append({
-                        "tool_call_id": tool_call.id,
-                        "output": f"Error: Tool {tool_call.function.name} not found"
-                    })
-            
-            # Add the tool outputs to the message history
-            if tool_outputs:
-                for output in tool_outputs:
-                    self.messages.append({
-                        "role": "tool",
-                        "tool_call_id": output["tool_call_id"],
-                        "content": output["output"]
-                    })
-                # Get the model's response after tool execution
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=self.messages
-                )
-                # Update message history with the model's post-tool call output (informed with tool call results)
-                self.messages.append(response.choices[0].message)
-                return response.choices[0].message.content
-        
-        return assistant_message.content
-
-    def _execute_tool(self, tool_call) -> str:
-        '''
-        Executes a tool call and returns its result.
-
-        Args:
-            tool_call: The tool call object from the model's response.
-
-        Returns:
-            str: The result of the tool execution.
-        '''
-        # Find the tool in the available tools
-        tool = next((t for t in self.tools if t.name == tool_call.function.name), None)
-        if not tool:
-            return f"Error: Tool {tool_call.function.name} not found."
-
-        # Parse the arguments
-        import json
-        try:
-            args = json.loads(tool_call.function.arguments)
-        except json.JSONDecodeError:
-            return f"Error: Invalid arguments for tool {tool_call.function.name}"
-
-        # Execute the tool's function
-        try:
-            result = tool.execute(**args)
-            return str(result)
-        except Exception as e:
-            return f"Error executing tool {tool_call.function.name}: {str(e)}"
-
     def _log_thinking(self, chat_prompt: str) -> None:
         '''
         Prints the intermediate outputs of the Agent in terminal, making thinking transparent throughout the execution of a Graph. All outputs are formatted to be clearly labelled when printed.
@@ -482,31 +302,336 @@ class OpenAIAgent:
         # Display formatted prompts
         print(f"{yellow}System Prompt:{reset} {self.system_prompt}\n")
         print(f"{yellow}Chat Prompt:{reset}\n" + format_text(chat_prompt) + "\n")
-    
+
+    def _encode_image(self, image_path: str) -> str:
+        '''
+        Helper function to encode images in Base64 encoding. Used for image inputs.
+        
+        Args:
+            image_path (str): Path to the image file
+            
+        Returns:
+            str: Base64 encoded string of the image
+        '''
+        try:
+            with open(image_path, "rb") as image_file:
+                return base64.b64encode(image_file.read()).decode("utf-8")
+        except Exception as e:
+            raise ValueError(f"Failed to encode image at {image_path}: {str(e)}")
+
+
+    async def invoke(self, author: str, chat_prompt: str = "", files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+        '''
+        Prompts the model, returning a text response. System instructions, routing options and chat history are aggregated into the prompt in the following format:
+            """
+            ## System Instructions:
+                {system_prompt}
+
+            ## Chat Prompt:
+                {chat_prompt}
+
+            ## Optional Routing:
+                You can route to the following agents: {edges}
+                To route to a specific agent, include their name in the following format: \\AgentName\\
+                Otherwise, I'll route to a random agent.
+            """
+
+        Args:
+            chat_prompt (str): Content to prompt the chat model with
+            edges (list[Agent]): Available agent routing options
+            show_thinking (bool): Enables log printing of prompt and response from model
+
+        Returns:
+            str: The model's response to the prompt
+        '''
+        # Build the message prompt and history
+        prompt = ""
+
+        # Format the prompt with the chat prompt and routing instructions
+        prompt += chat_prompt
+
+        # Add routing information and cues if there are multiple potential routes the agent can take
+        if edges and len(edges) > 1:
+            # Make the routing information optional
+            prompt += "\n\n--- Optional Routing ---\nYou can choose to route to one of the following agents:\n"
+            
+            # List all available agents with their descriptions
+            for edge in edges:
+                if edge != END:
+                    prompt += f"- {edge.name}: {edge.description}\n"
+                else:
+                    prompt += f"- END: Route to end the conversation\n"
+            
+            # Add routing instructions
+            prompt += "\nTo route to a specific agent, include their name in the following format at the end of your message: \\\\AgentName\\\\\n"
+            prompt += "If you don't specify a routing, I'll choose one automatically. Only route to an agent if you think they can help with the current task."
+
+        # add the message to our messages array
+        msg = {"role": author, "content": prompt}
+
+        # Add image file content to message
+        if files:
+            content = [{"type": "text", "text": prompt}]
+            for file_path in files:
+                # Only process image files
+                if file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                    # Read image and encode it in base64
+                    base64_image = self._encode_image(file_path)
+                    content.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    })
+            msg["content"] = content
+
+        # Add message to history
+        self.messages.append(msg)
+
+        # Format message list to be passed to the model
+        messages = self.messages.copy()
+
+        # Format the tools for the API
+        tools = format_tools_for_api(self.tools, "openai") if self.tools else None
+
+        # Print out the prompt for debugging purposes
+        if show_thinking:
+            self._log_thinking(prompt)
+
+        # Call the OpenAI API based on client type (sync or async)
+        if self.is_async:
+            # Asynchronous call
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                tool_choice="auto" if tools else None,
+            )
+        else:
+            # Synchronous call
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                tool_choice="auto" if tools else None,
+            )
+
+        # Extract the response text
+        response_message = response.choices[0].message
+
+        # Process tool calls if present
+        if response_message.tool_calls:
+            # Process each tool call
+            tool_call_results = []
+            for tool_call in response_message.tool_calls:
+                # Find the matching tool
+                tool_name = tool_call.function.name
+                matching_tools = [t for t in self.tools if t.name == tool_name]
+                
+                if not matching_tools:
+                    tool_call_results.append(f"Error: Tool '{tool_name}' not found.")
+                    continue
+                
+                tool = matching_tools[0]
+                
+                # Parse the arguments
+                import json
+                args = json.loads(tool_call.function.arguments)
+                
+                # Execute the tool
+                try:
+                    if self.is_async:
+                        # For async execution, we need to await the coroutine
+                        try:
+                            # The execute method might return a coroutine if the tool is async
+                            result_or_coroutine = tool.execute(**args)
+                            if inspect.iscoroutine(result_or_coroutine):
+                                # If it's a coroutine, await it
+                                result = await result_or_coroutine
+                            else:
+                                # If it's not a coroutine, just use it as is
+                                result = result_or_coroutine
+                        except Exception as e:
+                            tool_call_results.append(f"Error executing {tool_name}: {str(e)}")
+                            continue
+                    else:
+                        # For sync execution, just call the method directly
+                        result = tool.execute(**args)
+                        
+                    tool_call_results.append(f"Result from {tool_name}: {result}")
+                except Exception as e:
+                    tool_call_results.append(f"Error executing {tool_name}: {str(e)}")
+            
+            # Add the tool call result to the messages
+            self.messages.append({
+                "role": "assistant",
+                "content": None,
+                "tool_calls": response_message.tool_calls
+            })
+            
+            # Add the tool call results to the messages
+            for idx, result in enumerate(tool_call_results):
+                message = {
+                    "role": "tool",
+                    "tool_call_id": response_message.tool_calls[idx].id,
+                    "content": result
+                }
+                self.messages.append(message)
+            
+            # Get a new response that uses the tool call results
+            if self.is_async:
+                # Asynchronous call
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=self.messages,
+                )
+            else:
+                # Synchronous call
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=self.messages,
+                )
+            
+            # Update the response message
+            response_message = response.choices[0].message
+
+        # Add the response to the message history
+        response_text = response_message.content
+        self.messages.append({"role": "assistant", "content": response_text})
+
+        # Print out the response for debugging purposes
+        if show_thinking:
+            self._log_thinking(response_text)
+
+        return response_text
+
 
 class AnthropicAgent:
-    def __init__(self, client: Anthropic, system_prompt: str, model: str = "claude-3-5-sonnet-20240620", name: str = "agent", description: str = "", tools: list[Tool] = []) -> None:
+    def __init__(self, client: AsyncAnthropic | Anthropic, system_prompt: str, model: str = "claude-3-opus-20240229", name: str = "agent", description: str = "A general purpose agent", tools: list[Tool] = []) -> None:
         self.client = client
+        self.is_async = isinstance(client, AsyncAnthropic)
         self.model = model
         self.name = name
         self.system_prompt = system_prompt
         self.description = description
         self.messages = [{"role": "system", "content": system_prompt}]
         self.tools = tools
-        # Anthropic agents don't have files currently
         self.files = []
-
-    def invoke(self, author: str, chat_prompt: str = "", files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+        
+    def _log_thinking(self, chat_prompt: str) -> None:
         '''
-        Prompts the model, returning a text response
+        Prints the intermediate outputs of the Agent in terminal, making thinking transparent throughout the execution of a Graph. All outputs are formatted to be clearly labelled when printed.
 
         Args:
-            :chat_prompt (string): The prompt to send to the model.
-            :edges (list[Agent]): A list of agents to route to.
-            :show_thinking (bool): Whether to print the system prompt and chat prompt to the console.
-            
-        Returns:
-            str: The response from the model.
+            :chat_prompt (string): The prompt sent to the Agent.
         '''
-        # TODO: Implement Anthropic API integration with tool support
-        raise NotImplementedError("Anthropic agent implementation is not complete yet.")
+        terminal_width = shutil.get_terminal_size((80, 20)).columns
+        yellow = '\033[93m'
+        green = '\033[92m'
+        reset = '\033[0m'
+        header = f" {green}{self.name}{reset} "
+        visible_header = f" {header} "
+        dashes = (terminal_width - len(visible_header)) // 2
+
+        # Display agent name as header
+        print(f"{yellow}{'-' * dashes}{reset}{visible_header}{yellow}{'-' * dashes}{reset}")
+        
+        # Helper function to enforce formatted prompts
+        def format_text(text):
+            formatted_lines = []
+            for line in text.split("\n"):  # Preserve explicit newlines
+                wrapped_lines = textwrap.wrap(line, width=terminal_width - 4)  # Wrap lines with adjusted width
+                formatted_lines.extend(["    " + wrapped_line for wrapped_line in wrapped_lines])  # Add indentation
+            return "\n".join(formatted_lines)
+
+        # Display formatted prompts
+        print(f"{yellow}System Prompt:{reset} {self.system_prompt}\n")
+        print(f"{yellow}Chat Prompt:{reset}\n" + format_text(chat_prompt) + "\n")
+
+    async def invoke(self, author: str, prompt: str = "", files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+        '''
+        Prompts the model, returning a text response. System instructions, routing options and chat history are aggregated into the prompt.
+
+        Args:
+            prompt (str): Content to prompt the chat model with
+            edges (list[Agent]): Available agent routing options
+            show_thinking (bool): Enables log printing of prompt and response from model
+
+        Returns:
+            str: The model's response to the prompt
+        '''
+        # Add the prompt to the message history
+        msg = {"role": author, "content": prompt}
+        self.messages.append(msg)
+
+        # Format the messages list for the Anthropic API
+        # Anthropic has a unique message structure compared to OpenAI
+        formatted_messages = []
+        for i, msg in enumerate(self.messages):
+            if i == 0 and msg["role"] == "user":
+                # For the first message (system prompt), add it as a system message
+                formatted_messages.append({
+                    "role": "user",
+                    "content": msg["content"]
+                })
+                # Add the first assistant response (to acknowledge the system prompt)
+                formatted_messages.append({
+                    "role": "assistant", 
+                    "content": "I understand. I'll follow these instructions."
+                })
+            else:
+                # For regular messages, just add them as is
+                formatted_messages.append(msg)
+
+        # Add routing information as needed
+        if edges and len(edges) > 1:
+            # Note: This routing structure may need adjustment for Anthropic's API
+            routing_info = "\n\n--- Optional Routing ---\nYou can choose to route to one of the following agents:\n"
+            for edge in edges:
+                if edge != END:
+                    routing_info += f"- {edge.name}: {edge.description}\n"
+                else:
+                    routing_info += f"- END: Route to end the conversation\n"
+            routing_info += "\nTo route to a specific agent, include their name in the following format at the end of your message: \\\\AgentName\\\\\n"
+            routing_info += "If you don't specify a routing, I'll choose one automatically. Only route to an agent if you think they can help with the current task."
+            
+            # Append routing info to the last message
+            last_message = formatted_messages[-1]
+            if isinstance(last_message["content"], str):
+                formatted_messages[-1]["content"] += routing_info
+
+        # Print out the prompt for debugging purposes
+        if show_thinking:
+            self._log_thinking(prompt)
+
+        # For now, Anthropic doesn't support tools the same way as OpenAI
+        if self.tools:
+            print("Warning: Tool support for Anthropic is not yet fully implemented")
+
+        # Make the API call based on client type (sync or async)
+        if self.is_async:
+            # Asynchronous call
+            response = await self.client.messages.create(
+                model=self.model,
+                messages=formatted_messages,
+                # max_tokens=2000
+            )
+        else:
+            # Synchronous call
+            response = self.client.messages.create(
+                model=self.model,
+                messages=formatted_messages,
+                # max_tokens=2000
+            )
+
+        # Extract the response content
+        response_text = response.content[0].text
+        
+        # Add the response to the message history
+        self.messages.append({"role": "assistant", "content": response_text})
+
+        # Print out the response for debugging purposes
+        if show_thinking:
+            self._log_thinking(response_text)
+
+        return response_text

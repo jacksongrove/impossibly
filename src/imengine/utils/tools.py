@@ -5,6 +5,8 @@ This module provides a Tool class for defining and formatting tools
 for use with various language model APIs (OpenAI, Anthropic, etc.).
 '''
 
+import asyncio
+
 # Type mapping from Python types to OpenAI API types
 TYPE_MAPPING = {
     str: "string",
@@ -35,6 +37,9 @@ class Tool:
         self.description = description
         self.function = function
         self.parameters = []
+        
+        # Check if the function is a coroutine function
+        self.is_async = asyncio.iscoroutinefunction(function)
         
         # Process parameters
         if parameters:
@@ -104,8 +109,42 @@ class Tool:
             raise ValueError(f"Unsupported API: {api}")
 
     def execute(self, **kwargs):
-        """Execute the tool's function with the given arguments."""
-        return self.function(**kwargs)
+        """
+        Execute the tool's function with the given arguments.
+        
+        This method detects if it's being called from an async context and acts accordingly.
+        If called from sync code, it runs the async implementation using asyncio.run().
+        If called from async code, it returns a coroutine that can be awaited.
+        """
+        if self.is_async:
+            try:
+                # Check if we're in an event loop
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # We're being called from an async context
+                    # Return the coroutine for the caller to await
+                    return self._execute_async(**kwargs)
+                else:
+                    # No running event loop, create one
+                    result = asyncio.run(self._execute_async(**kwargs))
+                    return result
+            except RuntimeError as e:
+                # No event loop exists, create one
+                result = asyncio.run(self._execute_async(**kwargs))
+                return result
+            except Exception as e:
+                raise
+        else:
+            # Function is synchronous, just call it directly
+            try:
+                result = self.function(**kwargs)
+                return result
+            except Exception as e:
+                raise
+    
+    async def _execute_async(self, **kwargs):
+        """Internal async implementation of execute for async functions."""
+        return await self.function(**kwargs)
 
 
 def format_tools_for_api(tools, api="openai"):
