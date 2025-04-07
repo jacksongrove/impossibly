@@ -7,12 +7,24 @@ This library is designed to be used as a backend for AI apps and automations, pr
 
 # Getting Started
 ## Imports
-This will ultimately be a one-liner once the library is published. For now import the following into your python script:
-  ```
-  from agent import Agent
-  from graph import Graph
-  from utils.start_end import START, END
-  ```
+Import the components you need:
+```python
+from imengine import Agent, Graph, START, END
+```
+
+## Setting Up Environment Variables
+1. Copy the `.env.template` file to a new file named `.env`:
+   ```bash
+   cp .env.template .env
+   ```
+
+2. Fill in your API keys and configurations in the `.env` file:
+   ```
+   OPENAI_API_KEY=your_actual_api_key_here
+   ANTHROPIC_API_KEY=your_anthropic_api_key_here
+   ```
+
+3. The library will automatically load these variables when needed. At minimum, you'll need the API key for your preferred LLM provider.
 
 ## Initalize Clients for LLM APIs
 Done in the format standard to your API.
