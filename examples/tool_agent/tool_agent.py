@@ -4,16 +4,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
-# Get directory paths to interact with library modules. This will be changed to a package import in the future.
+# Get directory paths to interact with library modules. This will be replaced by the package import in the future.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 LIB_DIR = BASE_DIR / 'src'
 sys.path.insert(0, str(LIB_DIR))
 
 # Import modules
-from imengine.agent import Agent
-from imengine.graph import Graph
-from imengine.utils.start_end import START, END
-from imengine.utils.tools import Tool
+from imengine import Agent, Graph, Tool, START, END
 
 # Define our tools
 def calculate_sum(a, b):

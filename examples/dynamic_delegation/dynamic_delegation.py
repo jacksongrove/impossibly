@@ -17,10 +17,7 @@ LIB_DIR = BASE_DIR / 'src'
 sys.path.insert(0, str(LIB_DIR))
 
 # Import modules
-from imengine.agent import Agent
-from imengine.graph import Graph
-from imengine.utils.start_end import START, END
-from imengine.utils.tools import Tool
+from imengine import Agent, Graph, Tool, START, END
 
 # Define our recursive graph creation tool
 def create_expert_team(query, required_experts, team_task):
