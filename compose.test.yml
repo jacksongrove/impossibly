@@ -1,0 +1,16 @@
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      # Mount the .env file for environment variables
+      - ./imagination-engine/.env:/app/imagination-engine/.env:ro
+      # Optional: Mount these for live code changes during development
+      # - ./imagination-engine:/app/imagination-engine
+      # - ./tests:/app/tests
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Add any environment variables needed for tests here
+    # Allow overriding the command for specific test runs
+    command: pytest tests/ -v 

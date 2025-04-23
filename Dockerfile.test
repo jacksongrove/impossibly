@@ -1,0 +1,20 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Copy requirements and install dependencies first (for better caching)
+COPY imagination-engine/requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install test dependencies
+RUN pip install --no-cache-dir pytest pytest-cov
+
+# Copy application code and tests
+COPY imagination-engine /app/imagination-engine/
+COPY tests /app/tests/
+
+# Set environment variables
+ENV PYTHONPATH=/app
+
+# Set the entrypoint to run the tests
+ENTRYPOINT ["pytest", "tests/", "-v"] 
