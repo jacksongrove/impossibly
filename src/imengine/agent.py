@@ -4,6 +4,7 @@ Defines individual agent types to be called within the graph structure.
 Author: Jackson Grove
 '''
 import os, shutil, textwrap, base64, asyncio, inspect
+from typing import Union, List
 from openai import AsyncOpenAI, OpenAI
 from openai import File
 from anthropic import AsyncAnthropic, Anthropic
@@ -47,7 +48,7 @@ class Agent:
         ValueError: If the provided client is not an instance of either OpenAI or Anthropic.
     '''
 
-    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: list[str] = [], shared_memory: list['Agent'] = None, tools: list[Tool] = []) -> None:
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: List[str] = [], shared_memory: List['Agent'] = None, tools: List[Tool] = []) -> None:
         if isinstance(client, (AsyncOpenAI, OpenAI)):
             self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
         elif isinstance(client, (AsyncAnthropic, Anthropic)):
@@ -63,7 +64,7 @@ class Agent:
         self.files = self.client.files
         self.tools = tools
 
-    def invoke(self, author: str, prompt: str, files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+    def invoke(self, author: str, prompt: str, files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
         '''
         Public method that transparently handles both sync and async execution.
         
@@ -97,7 +98,7 @@ class Agent:
             # No event loop exists, create one
             return asyncio.run(self._invoke_async(author, prompt, files, edges, show_thinking))
 
-    async def _invoke_async(self, author: str, prompt: str, files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+    async def _invoke_async(self, author: str, prompt: str, files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
         '''
         Internal async implementation of invoke.
         
@@ -115,7 +116,7 @@ class Agent:
 
 
 class OpenAIAgent:
-    def __init__(self, client: AsyncOpenAI | OpenAI, system_prompt: str, model: str = "gpt-4o", name: str = "agent", description: str = "A general purpose agent", routing_instructions: str = "", files: list[str] = [], tools: list[Tool] = []) -> None:
+    def __init__(self, client: Union[AsyncOpenAI, OpenAI], system_prompt: str, model: str = "gpt-4o", name: str = "agent", description: str = "A general purpose agent", routing_instructions: str = "", files: List[str] = [], tools: List[Tool] = []) -> None:
         self.client = client
         self.is_async = isinstance(client, AsyncOpenAI)
         self.model = model
@@ -135,7 +136,7 @@ class OpenAIAgent:
             
         self.tools = tools
 
-    async def init_rag_files_async(self, files: list[str]) -> list['File']:
+    async def init_rag_files_async(self, files: List[str]) -> List['File']:
         '''
         Asynchronously initializes and uploads files for Retrieval-Augmented Generation (RAG) purposes.
         '''
@@ -164,7 +165,7 @@ class OpenAIAgent:
                 
         return file_objects
     
-    def init_rag_files_sync(self, files: list[str]) -> list['File']:
+    def init_rag_files_sync(self, files: List[str]) -> List['File']:
         '''
         Synchronously initializes and uploads files for Retrieval-Augmented Generation (RAG) purposes.
         '''
@@ -193,7 +194,7 @@ class OpenAIAgent:
                 
         return file_objects
 
-    def init_input_files(self, files: list[str]) -> list['File']:
+    def init_input_files(self, files: List[str]) -> List['File']:
         '''
         Initializes and uploads input files for various purposes based on their type.
 
@@ -320,7 +321,7 @@ class OpenAIAgent:
             raise ValueError(f"Failed to encode image at {image_path}: {str(e)}")
 
 
-    async def invoke(self, author: str, chat_prompt: str = "", files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+    async def invoke(self, author: str, chat_prompt: str = "", files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
         '''
         Prompts the model, returning a text response. System instructions, routing options and chat history are aggregated into the prompt in the following format:
             """
@@ -507,7 +508,7 @@ class OpenAIAgent:
 
 
 class AnthropicAgent:
-    def __init__(self, client: AsyncAnthropic | Anthropic, system_prompt: str, model: str = "claude-3-opus-20240229", name: str = "agent", description: str = "A general purpose agent", tools: list[Tool] = []) -> None:
+    def __init__(self, client: Union[AsyncAnthropic, Anthropic], system_prompt: str, model: str = "claude-3-opus-20240229", name: str = "agent", description: str = "A general purpose agent", files: List[str] = [], tools: List[Tool] = []) -> None:
         self.client = client
         self.is_async = isinstance(client, AsyncAnthropic)
         self.model = model
@@ -515,8 +516,11 @@ class AnthropicAgent:
         self.system_prompt = system_prompt
         self.description = description
         self.messages = [{"role": "system", "content": system_prompt}]
+        if self.is_async:
+            self.files = asyncio.run(self.init_rag_files_async(files)) if files else []
+        else:
+            self.files = self.init_rag_files_sync(files) if files else []
         self.tools = tools
-        self.files = []
         
     def _log_thinking(self, chat_prompt: str) -> None:
         '''
@@ -548,7 +552,7 @@ class AnthropicAgent:
         print(f"{yellow}System Prompt:{reset} {self.system_prompt}\n")
         print(f"{yellow}Chat Prompt:{reset}\n" + format_text(chat_prompt) + "\n")
 
-    async def invoke(self, author: str, prompt: str = "", files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+    async def invoke(self, author: str, prompt: str = "", files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
         '''
         Prompts the model, returning a text response. System instructions, routing options and chat history are aggregated into the prompt.
 
