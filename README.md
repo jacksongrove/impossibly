@@ -3,9 +3,26 @@ Imagination Engine is an agentic orchestration framework for rapidly building ag
 
 This library is designed to be used as a backend for AI apps and automations, providing support for all major LLM providers and locally-hosted model endpoints.
 
-**This project is currently in development. More features and support coming very soon.**
-
 # Getting Started
+## Installation
+
+Install the base package:
+```bash
+pip install imengine
+```
+
+Or install with specific integrations:
+```bash
+# Minimal installations with specific providers
+pip install "imengine[openai]"    # Only OpenAI support
+pip install "imengine[anthropic]" # Only Anthropic support
+pip install "imengine[all]"       # All LLM integrations
+
+# For testing and development
+pip install "imengine[test]"      # All LLM integrations + testing tools
+pip install "imengine[dev]"       # All LLM integrations + testing + dev tools
+```
+
 ## Imports
 Import the components you need:
 ```python
@@ -65,3 +82,32 @@ You're done! Prompt your agentic architecture.
 ```
 graph.invoke("Hello there!")
 ```
+
+# Development
+## Running Tests
+
+To run the tests, first install the package with test dependencies:
+
+```bash
+# Install with test dependencies
+pip install -e ".[test]"
+```
+
+Then run the tests using the CLI command that gets installed with the package:
+
+```bash
+# Run all tests
+imengine-test run
+
+# Run just feature tests
+imengine-test run --path features/
+
+# Run tests in Docker
+imengine-test run --docker
+
+# Get help
+imengine-test run --help
+```
+
+See [tests/README.md](tests/README.md) for more details on the testing framework and available options.
+mework and available options.

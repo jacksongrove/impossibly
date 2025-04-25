@@ -15,7 +15,7 @@ YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
 # Default values
-TEST_PATH="tests/"
+TEST_PATH="."
 HELP=false
 VERBOSE="-v"
 FILTER=""
@@ -68,7 +68,7 @@ if [ "$HELP" = true ]; then
   echo "Options:"
   echo "  -h, --help       Show this help message"
   echo "  -k, --filter     Filter tests by keyword expression"
-  echo "  -p, --path       Specify test path (default: tests/)"
+  echo "  -p, --path       Specify test path (default: . which is all tests)"
   echo "  --no-verbose     Run tests without verbose output"
   echo "  --clean          Clean up pytest cache and other temporary test files"
   echo "  --clean-docker   Clean up Docker test containers and images"
@@ -76,11 +76,14 @@ if [ "$HELP" = true ]; then
   echo "Examples:"
   echo "  ./run_tests_in_docker.sh                         # Run all tests"
   echo "  ./run_tests_in_docker.sh -k 'tools'              # Run tests containing 'tools'"
-  echo "  ./run_tests_in_docker.sh -p tests/features/      # Run only feature tests"
+  echo "  ./run_tests_in_docker.sh -p features/            # Run only feature tests"
   echo "  ./run_tests_in_docker.sh --clean                 # Clean up test cache files"
   echo "  ./run_tests_in_docker.sh --clean-docker          # Clean up Docker test resources"
   exit 0
 fi
+
+# Navigate to the scripts directory
+cd "$(dirname "$0")" || exit 1
 
 # Clean up Docker resources
 if [ "$CLEAN_DOCKER" = true ]; then
@@ -95,7 +98,7 @@ if [ "$CLEAN_DOCKER" = true ]; then
   echo -e "${GREEN}Docker cleanup complete!${NC}"
   
   # Exit if only Docker cleaning was requested
-  if [ "$CLEAN" = false ] && [ "$TEST_PATH" == "tests/" ] && [ -z "$FILTER" ] && [ -z "$PARAMS" ]; then
+  if [ "$CLEAN" = false ] && [ "$TEST_PATH" == "." ] && [ -z "$FILTER" ] && [ -z "$PARAMS" ]; then
     exit 0
   fi
 fi
@@ -103,6 +106,9 @@ fi
 # Clean up operation
 if [ "$CLEAN" = true ]; then
   echo -e "${BLUE}Cleaning up test directories...${NC}"
+  
+  # Navigate to project root for cleanup
+  cd "../.." || exit 1
   
   # Remove pytest cache
   find . -type d -name "__pycache__" -exec rm -rf {} +  2>/dev/null || true
@@ -116,8 +122,11 @@ if [ "$CLEAN" = true ]; then
   
   echo -e "${GREEN}Cleanup complete!${NC}"
   
+  # Return to scripts directory
+  cd "tests/scripts" || exit 1
+  
   # Exit if only cleaning was requested
-  if [ "$TEST_PATH" == "tests/" ] && [ -z "$FILTER" ] && [ -z "$PARAMS" ]; then
+  if [ "$TEST_PATH" == "." ] && [ -z "$FILTER" ] && [ -z "$PARAMS" ]; then
     exit 0
   fi
 fi

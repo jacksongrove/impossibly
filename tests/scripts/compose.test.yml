@@ -1,14 +1,14 @@
 services:
   test:
     build:
-      context: .
-      dockerfile: Dockerfile.test
+      context: ../..
+      dockerfile: tests/scripts/Dockerfile.test
     volumes:
       # Mount the .env file for environment variables
-      - ./imagination-engine/.env:/app/imagination-engine/.env:ro
+      - ../../.env:/app/.env:ro
       # Optional: Mount these for live code changes during development
-      # - ./imagination-engine:/app/imagination-engine
-      # - ./tests:/app/tests
+      # - ../../src:/app/src
+      # - ../../tests:/app/tests
     environment:
       - PYTHONUNBUFFERED=1
       # Add any environment variables needed for tests here
