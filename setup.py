@@ -8,6 +8,30 @@ with open("README.md", "r", encoding="utf-8") as fh:
 # Base dependencies that are always required
 core_requires = [
     "python-dotenv>=1.0.0",
+    "click>=8.0.0",  # For CLI commands
+]
+
+# LLM provider dependencies
+openai_requires = ["openai>=1.0.0"]
+anthropic_requires = ["anthropic>=0.4.0"]
+all_llm_requires = openai_requires + anthropic_requires
+
+# Testing dependencies (without LLM clients)
+testing_core = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0", 
+    "mock>=5.0.0",
+]
+
+# Testing with all LLM clients included
+test_requires = testing_core + all_llm_requires
+
+# Dev dependencies include testing plus linting/formatting tools
+dev_requires = test_requires + [
+    "black>=23.0.0",
+    "flake8>=6.0.0", 
+    "isort>=5.0.0",
+    "mypy>=1.0.0",
 ]
 
 setup(
@@ -17,14 +41,22 @@ setup(
     package_dir={"": "src"},
     install_requires=core_requires,
     extras_require={
-        # OpenAI integration
-        "openai": ["openai>=1.0.0"],
-        # Anthropic integration
-        "anthropic": ["anthropic>=0.4.0"],
-        # Install all integrations
-        "all": [
-            "openai>=1.0.0",
-            "anthropic>=0.4.0",
+        # Individual LLM integrations
+        "openai": openai_requires,
+        "anthropic": anthropic_requires,
+        
+        # All LLM integrations
+        "all": all_llm_requires,
+        
+        # Testing (includes all LLM clients)
+        "test": test_requires,
+        
+        # For development (includes testing + dev tools)
+        "dev": dev_requires,
+    },
+    entry_points={
+        "console_scripts": [
+            "imengine-test=imengine.cli.test_commands:tests",
         ],
     },
     description="An agentic architecture for idea generation & critical thinking",

@@ -1,74 +1,100 @@
 # Imagination Engine Tests
 
-This directory contains various tests for the Imagination Engine library, organized by test type and purpose.
+This directory contains various tests for the Imagination Engine library, organized by test purpose.
 
 ## Test Structure
 
 The test suite is organized into the following directories:
 
-- **Unit Tests**: (`tests/unit/`) - Tests for individual components in isolation
-- **Integration Tests**: (`tests/integration/`) - Tests for combinations of components working together
-- **Feature Tests**: (`tests/features/`) - Tests focused on verifying specific features of the framework
+- **Feature Tests**: (`tests/features/`) - Tests focused on verifying specific features of the framework, including:
+  - Agent interaction and communication
+  - Tool functionality and usage
+  - Image handling capabilities
+- **Utils**: (`tests/utils/`) - Utility functions and classes to support testing, such as mock clients
+- **Scripts**: (`tests/scripts/`) - Testing scripts and Docker configuration files
+
+## Setup and Dependencies
+
+Install the package with test dependencies using the "extras" feature in setup.py:
+
+```bash
+# Install the package with test dependencies
+pip install -e ".[test]"
+```
+
+The `[test]` extras include:
+- All LLM client libraries (OpenAI, Anthropic)
+- Testing framework (pytest and pytest-cov)
+- Mocking utilities (mock)
+
+For development with additional tools (black, flake8, etc.):
+```bash
+pip install -e ".[dev]"
+```
 
 ## Running Tests
 
-### Running All Tests
+### Using the CLI Command
 
-To run all tests in the suite:
-
-```bash
-pytest tests/
-```
-
-### Running Specific Test Types
-
-To run just unit tests:
+The most elegant way to run tests is to use the provided CLI command, which gets installed with the package:
 
 ```bash
-pytest tests/unit/
+# Run all tests
+imengine-test run
+
+# Run specific feature tests
+imengine-test run --path features/
+
+# Run tests in Docker
+imengine-test run --docker
+
+# Get help
+imengine-test run --help
 ```
 
-To run just integration tests:
+This Python-based command works from any directory and avoids the need for shell scripts.
+
+### Using pytest Directly
+
+You can also run pytest directly:
 
 ```bash
-pytest tests/integration/
+# Run all tests
+python -m pytest tests/
+
+# Run feature tests only
+python -m pytest tests/features/
+
+# Run a specific test file
+python -m pytest tests/features/test_agent_interaction.py
+
+# Run a specific test case
+python -m pytest tests/features/test_agent_interaction.py::TestAgentInteraction::test_conversation_memory
 ```
 
-To run just feature tests:
+### Verifying Test Discovery
+
+To check which tests will be run without actually running them:
 
 ```bash
-pytest tests/features/
+# Using the CLI command
+imengine-test run --collect-only
+
+# Using pytest directly
+python -m pytest tests/ --collect-only -v
 ```
 
-### Running Specific Test Files
+## Docker Testing
 
-To run tests from a specific file:
+You can run tests in Docker using the CLI command:
 
 ```bash
-pytest tests/unit/test_agent.py
+# Run tests in Docker
+imengine-test run --docker
+
+# Clean up Docker resources
+imengine-test run --docker --clean-docker
 ```
-
-### Running Specific Test Cases
-
-To run a specific test case by name:
-
-```bash
-pytest tests/unit/test_agent.py::TestAgentBasics::test_agent_initialization_with_anthropic
-```
-
-## Integration Test Script
-
-The repository includes a bash script to run and evaluate all example scripts:
-
-```bash
-tests/integration/run_examples.sh
-```
-
-This script:
-1. Runs all example scripts in parallel with a 60-second timeout
-2. Captures the output and exit code of each example
-3. Categorizes examples as succeeded, failed, or timed out
-4. Provides a detailed summary of results
 
 ## Test Configuration
 
@@ -78,16 +104,6 @@ Common fixtures and test configurations are defined in `tests/conftest.py`. Thes
 - Basic tools for testing
 - Other shared resources
 
-## Adding New Tests
-
-When adding new tests:
-
-1. Place unit tests in the `tests/unit/` directory
-2. Place integration tests in the `tests/integration/` directory
-3. Place feature-focused tests in the `tests/features/` directory
-4. Use the shared fixtures from `conftest.py` where possible
-5. Follow the existing naming conventions (`test_*.py` for files, `TestClassName` for classes, `test_method_name` for methods)
-
 ## Test Mocking
 
 Tests use the `unittest.mock` module to mock external dependencies, particularly:
@@ -96,4 +112,28 @@ Tests use the `unittest.mock` module to mock external dependencies, particularly
 - File system operations
 - External tool dependencies
 
-This allows tests to run without actual API keys or external services. 
+This allows tests to run without actual API keys or external services.
+
+## Troubleshooting
+
+If you encounter issues running the tests:
+
+1. **Module not found errors**: Ensure you've installed the package with test dependencies (`pip install -e ".[test]"`)
+2. **Script execution errors**: Make sure the package is properly installed with the CLI command
+3. **Docker issues**: Check that Docker and Docker Compose are installed and running
+4. **Test discovery issues**: Verify that your test files follow the naming convention `test_*.py`
+
+## Adding New Tests
+
+When adding new tests:
+
+1. Place feature-focused tests in the `tests/features/` directory
+2. Add testing utilities to the `tests/utils/` directory
+3. Use the shared fixtures from `conftest.py` where possible
+4. Follow the existing naming conventions (`test_*.py` for files, `TestClassName` for classes, `test_method_name` for methods)
+
+### Current Feature Test Files
+
+- `test_agent_interaction.py`: Tests agent creation, communication, memory, and multi-agent collaboration
+- `test_tools.py`: Tests tool definition, execution, parameter validation, and agent integration with tools
+- `test_image_capabilities.py`: Tests image handling, multimodal inputs, and vision-based agent functionality 
