@@ -1,0 +1,3 @@
+This is a sample text file for testing RAG functionality.
+It contains multiple lines of text.
+The agents should be able to process this file correctly.

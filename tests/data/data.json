@@ -1,0 +1,28 @@
+{
+  "name": "Test Document",
+  "properties": {
+    "author": "Test Framework",
+    "version": 1.0,
+    "tags": [
+      "test",
+      "rag",
+      "document"
+    ]
+  },
+  "content": {
+    "sections": [
+      {
+        "title": "Introduction",
+        "body": "This is a test JSON file."
+      },
+      {
+        "title": "Section 1",
+        "body": "This section covers important content."
+      },
+      {
+        "title": "Section 2",
+        "body": "This section provides examples."
+      }
+    ]
+  }
+}

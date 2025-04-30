@@ -52,7 +52,7 @@ class Agent:
         if isinstance(client, (AsyncOpenAI, OpenAI)):
             self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
         elif isinstance(client, (AsyncAnthropic, Anthropic)):
-            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools)
+            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools) # Excluding 'files' since Anthropic doesn't support RAG
         else:
             raise ValueError("Client must be an instance of AsyncOpenAI, OpenAI, AsyncAnthropic, or Anthropic")
         self.model = self.client.model
@@ -508,7 +508,7 @@ class OpenAIAgent:
 
 
 class AnthropicAgent:
-    def __init__(self, client: Union[AsyncAnthropic, Anthropic], system_prompt: str, model: str = "claude-3-opus-20240229", name: str = "agent", description: str = "A general purpose agent", files: List[str] = [], tools: List[Tool] = []) -> None:
+    def __init__(self, client: Union[AsyncAnthropic, Anthropic], system_prompt: str, model: str = "claude-3-opus-20240229", name: str = "agent", description: str = "A general purpose agent", tools: List[Tool] = []) -> None:
         self.client = client
         self.is_async = isinstance(client, AsyncAnthropic)
         self.model = model
@@ -516,10 +516,6 @@ class AnthropicAgent:
         self.system_prompt = system_prompt
         self.description = description
         self.messages = [{"role": "system", "content": system_prompt}]
-        if self.is_async:
-            self.files = asyncio.run(self.init_rag_files_async(files)) if files else []
-        else:
-            self.files = self.init_rag_files_sync(files) if files else []
         self.tools = tools
         
     def _log_thinking(self, chat_prompt: str) -> None:
@@ -557,39 +553,36 @@ class AnthropicAgent:
         Prompts the model, returning a text response. System instructions, routing options and chat history are aggregated into the prompt.
 
         Args:
+            author (str): The role of the message sender ('user', 'assistant')
             prompt (str): Content to prompt the chat model with
+            files (list[str]): List of file paths to include in the prompt
             edges (list[Agent]): Available agent routing options
             show_thinking (bool): Enables log printing of prompt and response from model
 
         Returns:
             str: The model's response to the prompt
         '''
-        # Add the prompt to the message history
+        # Create a message with the prompt
         msg = {"role": author, "content": prompt}
+        
+        # Handle any passed files by just noting their presence in the prompt
+        # This doesn't implement full RAG functionality but acknowledges the files
+        if files and len(files) > 0:
+            file_list = ", ".join([os.path.basename(f) for f in files])
+            # Modify the prompt to include information about the files
+            prompt += f"\n\n[Note: User has provided these files: {file_list}. However, file content processing is not currently available.]"
+            msg = {"role": author, "content": prompt}
+            
+        # Add message to history
         self.messages.append(msg)
 
         # Format the messages list for the Anthropic API
-        # Anthropic has a unique message structure compared to OpenAI
         formatted_messages = []
-        for i, msg in enumerate(self.messages):
-            if i == 0 and msg["role"] == "user":
-                # For the first message (system prompt), add it as a system message
-                formatted_messages.append({
-                    "role": "user",
-                    "content": msg["content"]
-                })
-                # Add the first assistant response (to acknowledge the system prompt)
-                formatted_messages.append({
-                    "role": "assistant", 
-                    "content": "I understand. I'll follow these instructions."
-                })
-            else:
-                # For regular messages, just add them as is
-                formatted_messages.append(msg)
+        for msg in self.messages:
+            formatted_messages.append(msg)
 
         # Add routing information as needed
         if edges and len(edges) > 1:
-            # Note: This routing structure may need adjustment for Anthropic's API
             routing_info = "\n\n--- Optional Routing ---\nYou can choose to route to one of the following agents:\n"
             for edge in edges:
                 if edge != END:
@@ -618,14 +611,12 @@ class AnthropicAgent:
             response = await self.client.messages.create(
                 model=self.model,
                 messages=formatted_messages,
-                # max_tokens=2000
             )
         else:
             # Synchronous call
             response = self.client.messages.create(
                 model=self.model,
                 messages=formatted_messages,
-                # max_tokens=2000
             )
 
         # Extract the response content

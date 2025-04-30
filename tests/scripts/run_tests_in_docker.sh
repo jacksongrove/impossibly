@@ -6,6 +6,7 @@
 # - Agent functionality and interaction (tests/features/test_agent_interaction.py)
 # - Image handling capabilities (tests/features/test_image_capabilities.py)
 # - Tool functionality and integration (tests/features/test_tools.py)
+# - Retrieval-Augmented Generation (RAG) capabilities (tests/features/test_rag.py)
 
 # Colors for output
 GREEN='\033[0;32m'
