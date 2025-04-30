@@ -146,7 +146,7 @@ echo -e "${GREEN}Build successful!${NC}"
 
 # When using ENTRYPOINT in Dockerfile, 'docker run' arguments are passed to the ENTRYPOINT
 # We need to pass our test path, filter and other parameters directly
-TEST_CMD="docker compose -f compose.test.yml run --rm test $TEST_PATH $FILTER $PARAMS"
+TEST_CMD="docker compose -f compose.test.yml run --rm test pytest $TEST_PATH $FILTER $PARAMS"
 
 # Run the tests
 echo -e "${BLUE}Running imagination-engine tests: ${TEST_CMD}${NC}"

@@ -61,7 +61,14 @@ class Agent:
         self.messages = self.client.messages
         self.description = self.client.description
         self.shared_memory = shared_memory
-        self.files = self.client.files
+        
+        # Set files attribute based on client type - Anthropic doesn't support RAG
+        if isinstance(self.client, OpenAIAgent):
+            self.files = self.client.files
+        else:
+            # For Anthropic, set to empty list
+            self.files = []
+            
         self.tools = tools
 
     def invoke(self, author: str, prompt: str, files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:

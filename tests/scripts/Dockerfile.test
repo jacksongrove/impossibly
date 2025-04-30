@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir pytest pytest-cov
 # Copy application code and tests
 COPY src/ /app/src/
 COPY tests/ /app/tests/
+COPY README.md /app/
 COPY setup.py /app/
 
 # Install the package in development mode
