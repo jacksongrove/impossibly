@@ -7,16 +7,7 @@ decision-making and hierarchical collaboration.
 """
 
 import os
-import sys
-from pathlib import Path
 from dotenv import load_dotenv
-
-# Get directory paths to interact with library modules. This will be changed to a package import in the future.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-LIB_DIR = BASE_DIR / 'src'
-sys.path.insert(0, str(LIB_DIR))
-
-# Import modules
 from imengine import Agent, Graph, Tool, START, END
 
 # Define our recursive graph creation tool
@@ -168,7 +159,7 @@ def create_expert_team(query, required_experts, team_task):
     team_response = team_graph.invoke(f"Original query: {query}\nTeam task: {team_task}")
     return team_response
 
-def main():
+def __main__():
     # Load environment variables from .env file
     load_dotenv()
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -250,4 +241,4 @@ def main():
     print(f"Response: {response}")
 
 if __name__ == "__main__":
-    main() 
+    __main__() 

@@ -4,20 +4,8 @@ This agent can perform web searches and provide information based on the search 
 """
 
 import os
-import sys
-from pathlib import Path
 from dotenv import load_dotenv
-
-# Get directory paths to interact with library modules. This will be replaced by the package import in the future.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-LIB_DIR = BASE_DIR / 'src'
-sys.path.insert(0, str(LIB_DIR))
-
-# Import modules
 from imengine import Agent, Graph, Tool, START, END
-
-# Load environment variables
-load_dotenv()
 
 def perform_web_search(query, max_results=5):
     """
@@ -81,7 +69,7 @@ def format_search_results(search_results, query):
     
     return formatted_results
 
-def main():
+def __main__():
     # Load environment variables from .env file
     load_dotenv()
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -171,4 +159,4 @@ def main():
     print(f"Response: {response}")
 
 if __name__ == "__main__":
-    main() 
+    __main__() 

@@ -1,15 +1,5 @@
 import os
-import sys
-from pathlib import Path
 from dotenv import load_dotenv
-
-# Get directory paths to interact with library modules. This will be replaced by the package import in the future.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-IMAGE_PATH = BASE_DIR / 'examples' / 'image_agent' / 'image_input.jpeg'
-LIB_DIR = BASE_DIR / 'src'
-sys.path.insert(0, str(LIB_DIR))
-
-# Import modules
 from imengine import Agent, Graph, START, END
 
 def __main__():
