@@ -14,6 +14,7 @@ from unittest.mock import patch, mock_open, MagicMock
 from imengine import Agent, Graph, START, END
 
 
+@pytest.mark.image
 class TestImageCapabilities:
     """Tests for verifying image handling capabilities."""
     
@@ -28,6 +29,7 @@ class TestImageCapabilities:
         with patch("builtins.open", mock_open(read_data=mock_image_data)):
             yield "test_image.jpg", mock_image_base64
     
+    @pytest.mark.image_input
     def test_agent_with_image_input(self, mock_openai_client, mock_image_file):
         """Test that an agent can receive and process image inputs."""
         image_path, image_base64 = mock_image_file
@@ -51,6 +53,7 @@ class TestImageCapabilities:
             # In a real implementation, we would verify that the image was properly
             # encoded and included in the message sent to the model
     
+    @pytest.mark.image_analysis
     def test_image_message_formatting(self, mock_openai_client, mock_image_file):
         """Test that messages with images are formatted correctly."""
         image_path, image_base64 = mock_image_file
@@ -109,6 +112,7 @@ class TestImageCapabilities:
                 # Verify the response
                 assert response == "I can see an image."
     
+    @pytest.mark.multi_image
     def test_multi_image_handling(self, mock_openai_client, mock_image_file):
         """Test that an agent can handle multiple images in one request."""
         image_path, image_base64 = mock_image_file
@@ -136,6 +140,7 @@ class TestImageCapabilities:
             # In a real implementation, we would verify that multiple images were
             # correctly encoded and included in the message
     
+    @pytest.mark.image_graph
     def test_image_agent_in_graph(self, mock_openai_client, mock_image_file):
         """Test that an image-capable agent can be part of a graph."""
         image_path, image_base64 = mock_image_file
