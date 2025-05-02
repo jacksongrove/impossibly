@@ -1,16 +1,7 @@
 import os
-import sys
-from pathlib import Path
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
-
-# Get directory paths to interact with library modules. This will be replaced by the package import in the future.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-LIB_DIR = BASE_DIR / 'src'
-sys.path.insert(0, str(LIB_DIR))
-
-# Import modules
-from imengine import Agent, Graph, Tool, START, END
+from imengine import Agent, Graph, START, END, Tool
 
 # Define our tools
 def calculate_sum(a, b):
@@ -34,7 +25,7 @@ def count_rs(text):
     result = uppercase_count + lowercase_count
     return result
 
-def main():
+def __main__():
     # Load environment variables from .env file
     load_dotenv()
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -118,4 +109,4 @@ def main():
     print(f"Response: {response}")
 
 if __name__ == "__main__":
-    main() 
+    __main__() 

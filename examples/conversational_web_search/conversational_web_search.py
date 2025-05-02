@@ -5,20 +5,8 @@ that require web searches, using the Tavily API for real-time information.
 """
 
 import os
-import sys
-from pathlib import Path
 from dotenv import load_dotenv
-
-# Get directory paths to interact with library modules. This will be replaced by the package import in the future.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-LIB_DIR = BASE_DIR / 'src'
-sys.path.insert(0, str(LIB_DIR))
-
-# Import modules
 from imengine import Agent, Graph, Tool, START, END
-
-# Load environment variables
-load_dotenv()
 
 def perform_web_search(query, max_results=5):
     """
