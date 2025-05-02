@@ -14,9 +14,11 @@ from unittest.mock import patch
 from imengine import Agent, Graph, START, END
 
 
+@pytest.mark.agent_memory
 class TestAgentInteraction:
     """Tests for verifying agent interaction capabilities."""
     
+    @pytest.mark.agent_memory
     def test_conversation_memory(self, mock_clients):
         """Test that agents maintain conversation history."""
         anthropic_client, _ = mock_clients
@@ -61,6 +63,7 @@ class TestAgentInteraction:
             assert "Remember this: blue sky" in str(msgs[0]["content"])
             assert "What did I ask you to remember?" in str(msgs[1]["content"])
     
+    @pytest.mark.multi_agent
     def test_multi_agent_collaboration(self, mock_clients):
         """Test that multiple agents can collaborate in a graph structure."""
         anthropic_client, openai_client = mock_clients
@@ -118,6 +121,7 @@ class TestAgentInteraction:
                     assert response == "Final collaborative response"
                     # In a real implementation, we would verify the execution path
     
+    @pytest.mark.cross_agent
     def test_cross_agent_memory_access(self, mock_anthropic_client):
         """Test that agents can access memory from other agents."""
         # Create the first agent and populate its memory
@@ -148,6 +152,7 @@ class TestAgentInteraction:
         # In a real implementation, the reader would be able to access the memory agent's history
         # Here we just verify the setup
     
+    @pytest.mark.multi_step
     def test_multi_step_reasoning(self, mock_anthropic_client):
         """Test that agents can perform multi-step reasoning through a graph structure."""
         # Create a single agent that can route to itself for multi-step reasoning
@@ -167,10 +172,10 @@ class TestAgentInteraction:
         
         # Define responses for the reasoner
         responses = [
-            "Step 1: I'll break down the problem. \\Reasoner\\",  # First call, routes back to self
-            "Step 2: Now I have the final answer. \\END\\"  # Second call, routes to END
-        ]
-        
+                "Step 1: I'll break down the problem. \\Reasoner\\",  # First call, routes back to self
+                "Step 2: Now I have the final answer. \\END\\"  # Second call, routes to END
+            ]
+            
         # Mock the reasoner's invoke to produce responses with routing
         with patch.object(reasoner.client, "invoke", side_effect=responses) as mock_invoke:
             # Mock the graph _invoke_async since we want to control the flow

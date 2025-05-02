@@ -14,9 +14,11 @@ from unittest.mock import MagicMock, patch
 from imengine import Agent, Tool, START, END
 
 
+@pytest.mark.tools
 class TestToolFunctionality:
     """Tests for verifying tool functionality."""
     
+    @pytest.mark.tools_direct
     def test_tool_direct_execution(self, basic_tools):
         """Test that tools can be executed directly with appropriate parameters."""
         # Get the calculator tool
@@ -28,6 +30,7 @@ class TestToolFunctionality:
         # Verify the result
         assert result == 8
     
+    @pytest.mark.tools_validation
     def test_tool_parameter_validation(self, basic_tools):
         """Test that tools validate their parameters."""
         # Get the calculator tool
@@ -37,6 +40,7 @@ class TestToolFunctionality:
         with pytest.raises(TypeError):
             calculator.execute(a="not a number", b=3)
     
+    @pytest.mark.tools_error
     def test_tool_error_handling(self, sample_tools):
         """Test that tool errors are handled appropriately."""
         # Get the divider tool
@@ -46,6 +50,7 @@ class TestToolFunctionality:
         with pytest.raises(ZeroDivisionError):
             divider.execute(a=10, b=0)
     
+    @pytest.mark.tools
     def test_agent_using_tools(self, mock_anthropic_client, sample_tools):
         """Test that an agent can use tools to complete tasks."""
         # Create an agent with tools
@@ -74,6 +79,7 @@ class TestToolFunctionality:
         # Note: Full tool usage testing would require more complex mocking
         # or integration tests with actual services
     
+    @pytest.mark.tools
     def test_tool_formatting_for_api(self, basic_tools):
         """Test that tools can be formatted for different LLM APIs."""
         from imengine.utils.tools import format_tools_for_api
@@ -94,6 +100,7 @@ class TestToolFunctionality:
         with pytest.raises(NotImplementedError):
             format_tools_for_api(basic_tools, api="anthropic")
     
+    @pytest.mark.tools_async
     def test_agent_with_async_tool(self, mock_anthropic_client):
         """Test that an agent can use async tools."""
         # Define an async tool

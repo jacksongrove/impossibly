@@ -59,4 +59,37 @@ imengine-test = "imengine.cli.test_commands:tests"
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
-where = ["src"] 
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    # RAG functionality markers
+    "rag: tests for retrieval-augmented generation (RAG) functionality",
+    "rag_text: tests for RAG with text files",
+    "rag_large: tests for RAG with large text files",
+    "rag_image: tests for RAG with image files",
+    "rag_unsupported: tests for RAG with unsupported file types",
+    "rag_content: tests for RAG content reaching agent",
+    "rag_multiple: tests for RAG with multiple files",
+    
+    # Agent interaction markers
+    "agent_memory: tests for agent memory and conversation history",
+    "multi_agent: tests for multi-agent collaboration",
+    "cross_agent: tests for sharing memory between agents",
+    "multi_step: tests for multi-step reasoning through graphs",
+    
+    # Tool functionality markers
+    "tools: tests for tool functionality",
+    "tools_direct: tests for direct tool execution",
+    "tools_validation: tests for tool parameter validation",
+    "tools_error: tests for tool error handling",
+    "tools_async: tests for asynchronous tools",
+    
+    # Image capability markers
+    "image: tests for image handling capabilities",
+    "image_input: tests for agent initialization with image input",
+    "image_analysis: tests for image analysis capabilities",
+    "multi_image: tests for handling multiple images in one request",
+    "image_graph: tests for image agents in graphs"
+] 

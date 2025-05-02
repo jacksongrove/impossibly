@@ -42,9 +42,25 @@ class MockOpenAI(OpenAI):
         mock_response.choices = [mock_choice]
         self.chat.completions.create.return_value = mock_response
         
-        # Set up files API
+        # Set up files API with better support for RAG testing
         self.files = MagicMock()
-        self.files.create.return_value = MagicMock(id="mock-file-id")
+        mock_file = MagicMock()
+        mock_file.id = "mock-file-id"
+        mock_file.filename = "mock-file.txt"
+        mock_file.purpose = "assistants"
+        mock_file.bytes = 1024
+        self.files.create.return_value = mock_file
+        
+        # List files returns a list of files
+        self.files.list.return_value = MagicMock(data=[mock_file])
+        
+        # Retrieve file returns a single file
+        self.files.retrieve.return_value = mock_file
+        
+        # Delete file returns a confirmation of deletion
+        delete_response = MagicMock()
+        delete_response.deleted = True
+        self.files.delete.return_value = delete_response
 
 
 def create_mock_anthropic():
