@@ -9,6 +9,7 @@ Author: Jackson Grove
 import re
 import asyncio
 import os
+from typing import Union, List, Tuple
 from imengine.agent import *
 from imengine.utils.start_end import START, END
 from imengine.utils.memory import Memory
@@ -26,10 +27,10 @@ class Graph:
         nodes: A view of the keys of the edges dictionary.
 
     Methods:
-        add_node(agent: Agent | list[Agent]) -> None:
+        add_node(agent: Union[Agent, List[Agent]]) -> None:
             Adds a node or multiple nodes to the graph. Nodes are not connected until edges are added.
         
-        add_edge(node1: Agent | list[Agent], node2: Agent | list[Agent]) -> None:
+        add_edge(node1: Union[Agent, List[Agent]], node2: Union[Agent, List[Agent]]) -> None:
             Adds directed edges between nodes, routing the output of node1 to the input of node2.
             Self-edges (a node connected to itself) are not allowed.
         
@@ -54,7 +55,7 @@ class Graph:
         self.nodes = self.edges.keys()
     
 
-    def add_node(self, agent: Agent | list[Agent]) -> None:
+    def add_node(self, agent: Union[Agent, List[Agent]]) -> None:
         '''
         Adds a node or multiple nodes to the graph. Nodes will not be connected until edges are added.
 
@@ -75,7 +76,7 @@ class Graph:
             raise ValueError("agent must be either an Agent or a list of Agents.")
     
 
-    def add_edge(self, node1: Agent | list[Agent], node2: Agent | list[Agent]) -> None:
+    def add_edge(self, node1: Union[Agent, List[Agent]], node2: Union[Agent, List[Agent]]) -> None:
         '''
         Adds an edge or edges between node1 and node2, routing the output of node1 
         to the input of node2. If either node1 or node2 is a list, an edge is added 

@@ -6,6 +6,7 @@
 # - Agent functionality and interaction (tests/features/test_agent_interaction.py)
 # - Image handling capabilities (tests/features/test_image_capabilities.py)
 # - Tool functionality and integration (tests/features/test_tools.py)
+# - Retrieval-Augmented Generation (RAG) capabilities (tests/features/test_rag.py)
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -145,7 +146,7 @@ echo -e "${GREEN}Build successful!${NC}"
 
 # When using ENTRYPOINT in Dockerfile, 'docker run' arguments are passed to the ENTRYPOINT
 # We need to pass our test path, filter and other parameters directly
-TEST_CMD="docker compose -f compose.test.yml run --rm test $TEST_PATH $FILTER $PARAMS"
+TEST_CMD="docker compose -f compose.test.yml run --rm test pytest $TEST_PATH $FILTER $PARAMS"
 
 # Run the tests
 echo -e "${BLUE}Running imagination-engine tests: ${TEST_CMD}${NC}"

@@ -1,0 +1,770 @@
+[0;34mRunning tests from directory:[0m /c/Users/nemes/gitrepos/Aicore/imag/imagination-engine
+[0;34mRunning tests locally...[0m
+[0;33mTest command: python -m pytest tests/../ -v    [0m
+============================= test session starts =============================
+platform win32 -- Python 3.11.4, pytest-8.3.5, pluggy-1.5.0 -- C:\Users\nemes\gitrepos\Aicore\imag\imagination-engine\tests\scripts\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\nemes\gitrepos\Aicore\imag\imagination-engine
+configfile: pyproject.toml
+plugins: anyio-4.5.2
+collecting ... collected 20 items
+
+tests/features/test_agent_interaction.py::TestAgentInteraction::test_conversation_memory FAILED [  5%]
+tests/features/test_agent_interaction.py::TestAgentInteraction::test_multi_agent_collaboration FAILED [ 10%]
+tests/features/test_agent_interaction.py::TestAgentInteraction::test_cross_agent_memory_access FAILED [ 15%]
+tests/features/test_agent_interaction.py::TestAgentInteraction::test_multi_step_reasoning FAILED [ 20%]
+tests/features/test_image_capabilities.py::TestImageCapabilities::test_agent_with_image_input FAILED [ 25%]
+tests/features/test_image_capabilities.py::TestImageCapabilities::test_image_message_formatting FAILED [ 30%]
+tests/features/test_image_capabilities.py::TestImageCapabilities::test_multi_image_handling FAILED [ 35%]
+tests/features/test_image_capabilities.py::TestImageCapabilities::test_image_agent_in_graph FAILED [ 40%]
+tests/features/test_rag.py::TestRAGFunctionality::test_openai_text_file_processing FAILED [ 45%]
+tests/features/test_rag.py::TestRAGFunctionality::test_openai_large_file_processing FAILED [ 50%]
+tests/features/test_rag.py::TestRAGFunctionality::test_openai_image_file_processing FAILED [ 55%]
+tests/features/test_rag.py::TestRAGFunctionality::test_unsupported_file_handling FAILED [ 60%]
+tests/features/test_rag.py::TestRAGFunctionality::test_openai_rag_content_reaching_agent FAILED [ 65%]
+tests/features/test_rag.py::TestRAGFunctionality::test_openai_multiple_file_processing FAILED [ 70%]
+tests/features/test_tools.py::TestToolFunctionality::test_tool_direct_execution PASSED [ 75%]
+tests/features/test_tools.py::TestToolFunctionality::test_tool_parameter_validation PASSED [ 80%]
+tests/features/test_tools.py::TestToolFunctionality::test_tool_error_handling PASSED [ 85%]
+tests/features/test_tools.py::TestToolFunctionality::test_agent_using_tools FAILED [ 90%]
+tests/features/test_tools.py::TestToolFunctionality::test_tool_formatting_for_api FAILED [ 95%]
+tests/features/test_tools.py::TestToolFunctionality::test_agent_with_async_tool FAILED [100%]
+
+================================== FAILURES ===================================
+________________ TestAgentInteraction.test_conversation_memory ________________
+
+self = <tests.features.test_agent_interaction.TestAgentInteraction object at 0x000002185E92A350>
+mock_clients = (<tests.utils.client_mocks.MockAnthropic object at 0x000002185E92A8D0>, <tests.utils.client_mocks.MockOpenAI object at 0x000002185E967010>)
+
+    def test_conversation_memory(self, mock_clients):
+        """Test that agents maintain conversation history."""
+        anthropic_client, _ = mock_clients
+    
+        # Create an agent
+>       agent = Agent(
+            anthropic_client,
+            model="claude-3-5-haiku-latest",
+            name="MemoryAgent",
+            system_prompt="You are an agent with memory capabilities."
+        )
+
+tests\features\test_agent_interaction.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <imengine.agent.Agent object at 0x000002185E9833D0>
+client = <tests.utils.client_mocks.MockAnthropic object at 0x000002185E92A8D0>
+model = 'claude-3-5-haiku-latest', name = 'MemoryAgent'
+system_prompt = 'You are an agent with memory capabilities.', description = ''
+files = [], shared_memory = None, tools = []
+
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: List[str] = [], shared_memory: List['Agent'] = None, tools: List[Tool] = []) -> None:
+        if isinstance(client, (AsyncOpenAI, OpenAI)):
+            self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
+        elif isinstance(client, (AsyncAnthropic, Anthropic)):
+            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools) # Excluding 'files' since Anthropic doesn't support RAG
+        else:
+            raise ValueError("Client must be an instance of AsyncOpenAI, OpenAI, AsyncAnthropic, or Anthropic")
+        self.model = self.client.model
+        self.name = self.client.name
+        self.system_prompt = self.client.system_prompt
+        self.messages = self.client.messages
+        self.description = self.client.description
+        self.shared_memory = shared_memory
+>       self.files = self.client.files
+E       AttributeError: 'AnthropicAgent' object has no attribute 'files'
+
+src\imengine\agent.py:64: AttributeError
+_____________ TestAgentInteraction.test_multi_agent_collaboration _____________
+
+self = <tests.features.test_agent_interaction.TestAgentInteraction object at 0x000002185E92AF90>
+mock_clients = (<tests.utils.client_mocks.MockAnthropic object at 0x000002185EA58B10>, <tests.utils.client_mocks.MockOpenAI object at 0x000002185EA501D0>)
+
+    def test_multi_agent_collaboration(self, mock_clients):
+        """Test that multiple agents can collaborate in a graph structure."""
+        anthropic_client, openai_client = mock_clients
+    
+        # Create agents with different specialties
+>       expert1 = Agent(
+            anthropic_client,
+            model="claude-3-5-haiku-latest",
+            name="Expert1",
+            system_prompt="You are an expert on topic A.",
+            description="Expert on topic A"
+        )
+
+tests\features\test_agent_interaction.py:60: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <imengine.agent.Agent object at 0x000002185EA1B850>
+client = <tests.utils.client_mocks.MockAnthropic object at 0x000002185EA58B10>
+model = 'claude-3-5-haiku-latest', name = 'Expert1'
+system_prompt = 'You are an expert on topic A.'
+description = 'Expert on topic A', files = [], shared_memory = None, tools = []
+
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: List[str] = [], shared_memory: List['Agent'] = None, tools: List[Tool] = []) -> None:
+        if isinstance(client, (AsyncOpenAI, OpenAI)):
+            self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
+        elif isinstance(client, (AsyncAnthropic, Anthropic)):
+            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools) # Excluding 'files' since Anthropic doesn't support RAG
+        else:
+            raise ValueError("Client must be an instance of AsyncOpenAI, OpenAI, AsyncAnthropic, or Anthropic")
+        self.model = self.client.model
+        self.name = self.client.name
+        self.system_prompt = self.client.system_prompt
+        self.messages = self.client.messages
+        self.description = self.client.description
+        self.shared_memory = shared_memory
+>       self.files = self.client.files
+E       AttributeError: 'AnthropicAgent' object has no attribute 'files'
+
+src\imengine\agent.py:64: AttributeError
+_____________ TestAgentInteraction.test_cross_agent_memory_access _____________
+
+self = <tests.features.test_agent_interaction.TestAgentInteraction object at 0x000002185E92B750>
+mock_anthropic_client = <tests.utils.client_mocks.MockAnthropic object at 0x000002185EA52F50>
+
+    def test_cross_agent_memory_access(self, mock_anthropic_client):
+        """Test that agents can access memory from other agents."""
+        # Create the first agent and populate its memory
+>       memory_agent = Agent(
+            mock_anthropic_client,
+            model="claude-3-5-haiku-latest",
+            name="MemoryAgent",
+            system_prompt="You are an agent that stores information."
+        )
+
+tests\features\test_agent_interaction.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <imengine.agent.Agent object at 0x000002185EA41390>
+client = <tests.utils.client_mocks.MockAnthropic object at 0x000002185EA52F50>
+model = 'claude-3-5-haiku-latest', name = 'MemoryAgent'
+system_prompt = 'You are an agent that stores information.', description = ''
+files = [], shared_memory = None, tools = []
+
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: List[str] = [], shared_memory: List['Agent'] = None, tools: List[Tool] = []) -> None:
+        if isinstance(client, (AsyncOpenAI, OpenAI)):
+            self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
+        elif isinstance(client, (AsyncAnthropic, Anthropic)):
+            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools) # Excluding 'files' since Anthropic doesn't support RAG
+        else:
+            raise ValueError("Client must be an instance of AsyncOpenAI, OpenAI, AsyncAnthropic, or Anthropic")
+        self.model = self.client.model
+        self.name = self.client.name
+        self.system_prompt = self.client.system_prompt
+        self.messages = self.client.messages
+        self.description = self.client.description
+        self.shared_memory = shared_memory
+>       self.files = self.client.files
+E       AttributeError: 'AnthropicAgent' object has no attribute 'files'
+
+src\imengine\agent.py:64: AttributeError
+_______________ TestAgentInteraction.test_multi_step_reasoning ________________
+
+self = <tests.features.test_agent_interaction.TestAgentInteraction object at 0x000002185E92BE90>
+mock_anthropic_client = <tests.utils.client_mocks.MockAnthropic object at 0x000002185EA591D0>
+
+    def test_multi_step_reasoning(self, mock_anthropic_client):
+        """Test that agents can perform multi-step reasoning through a graph structure."""
+        # Create a single agent that can route to itself for multi-step reasoning
+>       reasoner = Agent(
+            mock_anthropic_client,
+            model="claude-3-5-sonnet-latest",
+            name="Reasoner",
+            system_prompt="You solve problems step by step. If you need more steps, route back to yourself."
+        )
+
+tests\features\test_agent_interaction.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <imengine.agent.Agent object at 0x000002185EB47FD0>
+client = <tests.utils.client_mocks.MockAnthropic object at 0x000002185EA591D0>
+model = 'claude-3-5-sonnet-latest', name = 'Reasoner'
+system_prompt = 'You solve problems step by step. If you need more steps, route back to yourself.'
+description = '', files = [], shared_memory = None, tools = []
+
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: List[str] = [], shared_memory: List['Agent'] = None, tools: List[Tool] = []) -> None:
+        if isinstance(client, (AsyncOpenAI, OpenAI)):
+            self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
+        elif isinstance(client, (AsyncAnthropic, Anthropic)):
+            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools) # Excluding 'files' since Anthropic doesn't support RAG
+        else:
+            raise ValueError("Client must be an instance of AsyncOpenAI, OpenAI, AsyncAnthropic, or Anthropic")
+        self.model = self.client.model
+        self.name = self.client.name
+        self.system_prompt = self.client.system_prompt
+        self.messages = self.client.messages
+        self.description = self.client.description
+        self.shared_memory = shared_memory
+>       self.files = self.client.files
+E       AttributeError: 'AnthropicAgent' object has no attribute 'files'
+
+src\imengine\agent.py:64: AttributeError
+______________ TestImageCapabilities.test_agent_with_image_input ______________
+
+self = <tests.features.test_image_capabilities.TestImageCapabilities object at 0x000002185E9357D0>
+mock_openai_client = <tests.utils.client_mocks.MockOpenAI object at 0x000002185EACFE50>
+mock_image_file = ('test_image.jpg', 'ZmFrZV9pbWFnZV9kYXRh')
+
+    def test_agent_with_image_input(self, mock_openai_client, mock_image_file):
+        """Test that an agent can receive and process image inputs."""
+        image_path, image_base64 = mock_image_file
+    
+        # Create an agent with vision capabilities
+        agent = Agent(
+            mock_openai_client,
+            model="gpt-4o",  # This model supports vision
+            name="VisionAgent",
+            system_prompt="You are an agent that can analyze images."
+        )
+    
+        # Mock the _encode_image method to return our base64 encoded test image
+        with patch("imengine.agent.OpenAIAgent._encode_image", return_value=image_base64):
+            # Test invoking the agent with an image
+            response = agent.invoke("user", "What do you see in this image?", files=[image_path])
+    
+            # Verify the response (this depends on the mock set up for the client)
+>           assert "cat" in response.lower()
+E           AssertionError: assert 'cat' in 'this is a mock response from gpt'
+E            +  where 'this is a mock response from gpt' = <built-in method lower of str object at 0x000002185C2CF0F0>()
+E            +    where <built-in method lower of str object at 0x000002185C2CF0F0> = 'This is a mock response from GPT'.lower
+
+tests\features\test_image_capabilities.py:49: AssertionError
+_____________ TestImageCapabilities.test_image_message_formatting _____________
+
+self = <tests.features.test_image_capabilities.TestImageCapabilities object at 0x000002185E935ED0>
+mock_openai_client = <tests.utils.client_mocks.MockOpenAI object at 0x000002185E929E90>
+mock_image_file = ('test_image.jpg', 'ZmFrZV9pbWFnZV9kYXRh')
+
+    def test_image_message_formatting(self, mock_openai_client, mock_image_file):
+        """Test that messages with images are formatted correctly."""
+        image_path, image_base64 = mock_image_file
+    
+        # Create an agent with vision capabilities
+        agent = Agent(
+            mock_openai_client,
+            model="gpt-4o",  # This model supports vision
+            name="VisionAgent",
+            system_prompt="You are an agent that can analyze images."
+        )
+    
+        # Mock the _encode_image method to return our base64 encoded test image
+        with patch("imengine.agent.OpenAIAgent._encode_image", return_value=image_base64):
+            # Mock the client's chat.completions.create to capture the messages
+>           with patch.object(agent.client, "chat.completions.create") as mock_create:
+
+tests\features\test_image_capabilities.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1443: in __enter__
+    original, local = self.get_original()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <unittest.mock._patch object at 0x000002185EAEBDD0>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <imengine.agent.OpenAIAgent object at 0x000002185EAEBC90> does not have the attribute 'chat.completions.create'
+
+..\..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1416: AttributeError
+_______________ TestImageCapabilities.test_multi_image_handling _______________
+
+self = <tests.features.test_image_capabilities.TestImageCapabilities object at 0x000002185E9365D0>
+mock_openai_client = <tests.utils.client_mocks.MockOpenAI object at 0x000002185EA7B250>
+mock_image_file = ('test_image.jpg', 'ZmFrZV9pbWFnZV9kYXRh')
+
+    def test_multi_image_handling(self, mock_openai_client, mock_image_file):
+        """Test that an agent can handle multiple images in one request."""
+        image_path, image_base64 = mock_image_file
+    
+        # Create two image paths for testing
+        image_path1 = "test_image1.jpg"
+        image_path2 = "test_image2.jpg"
+    
+        # Create an agent with vision capabilities
+        agent = Agent(
+            mock_openai_client,
+            model="gpt-4o",  # This model supports vision
+            name="VisionAgent",
+            system_prompt="You are an agent that can analyze multiple images."
+        )
+    
+        # Mock the _encode_image method to return our base64 encoded test image
+        with patch("imengine.agent.OpenAIAgent._encode_image", return_value=image_base64):
+            # Test invoking the agent with multiple images
+            response = agent.invoke("user", "Compare these two images", files=[image_path1, image_path2])
+    
+            # Verify the response (this depends on the mock set up for the client)
+>           assert "cat" in response.lower()
+E           AssertionError: assert 'cat' in 'this is a mock response from gpt'
+E            +  where 'this is a mock response from gpt' = <built-in method lower of str object at 0x000002185C2CF0F0>()
+E            +    where <built-in method lower of str object at 0x000002185C2CF0F0> = 'This is a mock response from GPT'.lower
+
+tests\features\test_image_capabilities.py:124: AssertionError
+_______________ TestImageCapabilities.test_image_agent_in_graph _______________
+
+self = <tests.features.test_image_capabilities.TestImageCapabilities object at 0x000002185E936D10>
+mock_openai_client = <tests.utils.client_mocks.MockOpenAI object at 0x000002185EA18750>
+mock_image_file = ('test_image.jpg', 'ZmFrZV9pbWFnZV9kYXRh')
+
+    def test_image_agent_in_graph(self, mock_openai_client, mock_image_file):
+        """Test that an image-capable agent can be part of a graph."""
+        image_path, image_base64 = mock_image_file
+    
+        # Create an agent with vision capabilities
+        vision_agent = Agent(
+            mock_openai_client,
+            model="gpt-4o",  # This model supports vision
+            name="VisionAgent",
+            system_prompt="You are an agent that can analyze images.",
+            description="I can analyze images"
+        )
+    
+        # Create another agent for further processing
+        processor_agent = Agent(
+            mock_openai_client,
+            model="gpt-4o",
+            name="ProcessorAgent",
+            system_prompt="You process information from other agents.",
+            description="I process information"
+        )
+    
+        # Create a graph with these agents
+        graph = Graph()
+        graph.add_node(vision_agent)
+        graph.add_node(processor_agent)
+    
+        graph.add_edge(START, vision_agent)
+        graph.add_edge(vision_agent, processor_agent)
+        graph.add_edge(processor_agent, END)
+    
+        # Mock the _encode_image method to return our base64 encoded test image
+        with patch("imengine.agent.OpenAIAgent._encode_image", return_value=image_base64):
+            # Mock the vision agent's response
+            with patch.object(vision_agent.client, "invoke", return_value="I see a cat in the image. \\ProcessorAgent\\"):
+                # Mock the processor agent's response
+                with patch.object(processor_agent.client, "invoke", return_value="After analysis, this appears to be a domestic cat."):
+                    # Mock the graph execution
+>                   with patch.object(graph, "_run_graph") as mock_run:
+
+tests\features\test_image_capabilities.py:167: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1443: in __enter__
+    original, local = self.get_original()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <unittest.mock._patch object at 0x000002185EA53390>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <imengine.graph.Graph object at 0x000002185EA53A50> does not have the attribute '_run_graph'
+
+..\..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1416: AttributeError
+____________ TestRAGFunctionality.test_openai_text_file_processing ____________
+
+self = <tests.features.test_rag.TestRAGFunctionality object at 0x000002185E94C690>
+mock_openai_client = <tests.utils.client_mocks.MockOpenAI object at 0x000002185E95DA50>
+test_files = {'bad_file': 'C:\\Users\\nemes\\AppData\\Local\\Temp\\tmp2hlbasqm\\unsupported.xyz', 'image_file': 'C:\\Users\\nemes\\...\tmp2hlbasqm\\data.json', 'large_file': 'C:\\Users\\nemes\\AppData\\Local\\Temp\\tmp2hlbasqm\\large_document.txt', ...}
+
+    def test_openai_text_file_processing(self, mock_openai_client, test_files):
+        """Test OpenAI agent's handling of text files in RAG."""
+        # Create an OpenAI agent
+        agent = Agent(
+            mock_openai_client,
+            model="gpt-4o",
+            name="OpenAI_RAG_Tester",
+            system_prompt="You analyze documents and answer questions about them."
+        )
+    
+        # Set up the mock client to track calls
+        mock_files_create = mock_openai_client.files.create
+    
+        # Test with a small text file
+        files = [test_files["text_file"]]
+    
+        # Invoke agent with the file
+        with patch.object(agent.client, "invoke", return_value="I analyzed the text file."):
+            response = agent.invoke("user", "Analyze this file.", files=files)
+    
+            # Verify file was processed correctly
+>           assert mock_files_create.called
+E           AssertionError: assert False
+E            +  where False = <MagicMock name='mock.create' id='2303690639312'>.called
+
+tests\features\test_rag.py:83: AssertionError
+___________ TestRAGFunctionality.test_openai_large_file_processing ____________
+
+self = <tests.features.test_rag.TestRAGFunctionality object at 0x000002185E92B210>
+mock_openai_client = <tests.utils.client_mocks.MockOpenAI object at 0x000002185E900C10>
+test_files = {'bad_file': 'C:\\Users\\nemes\\AppData\\Local\\Temp\\tmpmg8psowb\\unsupported.xyz', 'image_file': 'C:\\Users\\nemes\\...\tmpmg8psowb\\data.json', 'large_file': 'C:\\Users\\nemes\\AppData\\Local\\Temp\\tmpmg8psowb\\large_document.txt', ...}
+
+    def test_openai_large_file_processing(self, mock_openai_client, test_files):
+        """Test OpenAI agent's handling of large text files in RAG."""
+        # Create an OpenAI agent
+        agent = Agent(
+            mock_openai_client,
+            model="gpt-4o",
+            name="OpenAI_RAG_Tester",
+            system_prompt="You analyze large documents and answer questions about them."
+        )
+    
+        # Set up the mock client to track calls
+        mock_files_create = mock_openai_client.files.create
+    
+        # Test with a large text file
+        files = [test_files["large_file"]]
+    
+        # Invoke agent with the file
+        with patch.object(agent.client, "invoke", return_value="I processed the large file without truncating it."):
+            response = agent.invoke("user", "Analyze this large file.", files=files)
+    
+            # Verify file was processed correctly
+>           assert mock_files_create.called
+E           AssertionError: assert False
+E            +  where False = <MagicMock name='mock.create' id='2303690636176'>.called
+
+tests\features\test_rag.py:113: AssertionError
+___________ TestRAGFunctionality.test_openai_image_file_processing ____________
+
+self = <tests.features.test_rag.TestRAGFunctionality object at 0x000002185E94CB10>
+mock_openai_client = <tests.utils.client_mocks.MockOpenAI object at 0x000002185EA96C50>
+test_files = {'bad_file': 'C:\\Users\\nemes\\AppData\\Local\\Temp\\tmpz31ru56k\\unsupported.xyz', 'image_file': 'C:\\Users\\nemes\\...\tmpz31ru56k\\data.json', 'large_file': 'C:\\Users\\nemes\\AppData\\Local\\Temp\\tmpz31ru56k\\large_document.txt', ...}
+
+    def test_openai_image_file_processing(self, mock_openai_client, test_files):
+        """Test OpenAI agent's handling of image files."""
+        # Create an OpenAI agent
+        agent = Agent(
+            mock_openai_client,
+            model="gpt-4-vision-preview",
+            name="OpenAI_Image_Tester",
+            system_prompt="You analyze images."
+        )
+    
+        # Test with image file
+        with patch.object(agent.client, "invoke", return_value="I analyzed the image."):
+            response = agent.invoke("user", "Analyze this image.", files=[test_files["image_file"]])
+            assert response == "I analyzed the image."
+    
+            # OpenAI should use the files API
+>           assert mock_openai_client.files.create.called
+E           AssertionError: assert False
+E            +  where False = <MagicMock name='mock.create' id='2303690511440'>.called
+E            +    where <MagicMock name='mock.create' id='2303690511440'> = <MagicMock id='2303690232272'>.create
+E            +      where <MagicMock id='2303690232272'> = <tests.utils.client_mocks.MockOpenAI object at 0x000002185EA96C50>.files
+
+tests\features\test_rag.py:132: AssertionError
+_____________ TestRAGFunctionality.test_unsupported_file_handling _____________
+
+self = <tests.features.test_rag.TestRAGFunctionality object at 0x000002185E94CED0>
+mock_openai_client = <tests.utils.client_mocks.MockOpenAI object at 0x000002185EAC6390>
+test_files = {'bad_file': 'C:\\Users\\nemes\\AppData\\Local\\Temp\\tmpk3tleqxn\\unsupported.xyz', 'image_file': 'C:\\Users\\nemes\\...\tmpk3tleqxn\\data.json', 'large_file': 'C:\\Users\\nemes\\AppData\\Local\\Temp\\tmpk3tleqxn\\large_document.txt', ...}
+
+    def test_unsupported_file_handling(self, mock_openai_client, test_files):
+        """Test OpenAI agent properly handles unsupported file types."""
+        # Create OpenAI agent
+        agent = Agent(mock_openai_client, name="OpenAI_Error_Tester")
+    
+        # Try with an unsupported file type
+>       with pytest.raises(Exception):  # Assuming some sort of exception will be raised
+E       Failed: DID NOT RAISE <class 'Exception'>
+
+tests\features\test_rag.py:140: Failed
+_________ TestRAGFunctionality.test_openai_rag_content_reaching_agent _________
+
+self = <tests.features.test_rag.TestRAGFunctionality object at 0x000002185E94D2D0>
+mock_openai_client = <tests.utils.client_mocks.MockOpenAI object at 0x000002185EA44090>
+
+    def test_openai_rag_content_reaching_agent(self, mock_openai_client):
+        """Test that RAG content actually reaches the OpenAI agent and affects its response."""
+        # Create an OpenAI agent with a system prompt to recite file content
+        agent = Agent(
+            mock_openai_client,
+            model="gpt-4o",
+            name="OpenAI_RAG_Content_Tester",
+            system_prompt="You are an assistant that always recites information from the documents provided to you. When asked about a document, you should quote its contents directly."
+        )
+    
+        # Create a temporary file with test content
+        test_content = "OPENAI_SECRET_KEY_12345"
+    
+        with tempfile.NamedTemporaryFile(suffix=".txt", mode="w+", delete=False) as temp_file:
+            temp_file.write(f"This is a confidential document with access code: {test_content}")
+            temp_file_path = temp_file.name
+    
+        try:
+            # Mock file creation method
+            with patch.object(mock_openai_client.files, "create") as mock_create:
+                # Set up mock file object
+                mock_file = MagicMock()
+                mock_file.id = "file-123456"
+                mock_create.return_value = mock_file
+    
+                # Mock the invoke method to return a response that includes RAG content
+                expected_response = f"The document states the access code is: {test_content}"
+                with patch.object(agent.client, "invoke", return_value=expected_response):
+                    # Test that agent receives and uses the RAG content
+                    response = agent.invoke("user", "What is the access code in the document?", files=[temp_file_path])
+    
+                    # Verify file was processed
+>                   assert mock_create.called
+E                   AssertionError: assert False
+E                    +  where False = <MagicMock name='create' id='2303690861456'>.called
+
+tests\features\test_rag.py:176: AssertionError
+__________ TestRAGFunctionality.test_openai_multiple_file_processing __________
+
+self = <tests.features.test_rag.TestRAGFunctionality object at 0x000002185E94D6D0>
+mock_openai_client = <tests.utils.client_mocks.MockOpenAI object at 0x000002185EB21ED0>
+
+    def test_openai_multiple_file_processing(self, mock_openai_client):
+        """Test that OpenAI agent can handle multiple files in a single request."""
+        # Create an OpenAI agent
+        agent = Agent(
+            mock_openai_client,
+            model="gpt-4o",
+            name="OpenAI_MultiFile_Tester",
+            system_prompt="You analyze multiple documents at once."
+        )
+    
+        # Create multiple temp files
+        files = []
+        try:
+            for i in range(3):
+                with tempfile.NamedTemporaryFile(suffix=".txt", mode="w+", delete=False) as temp_file:
+                    temp_file.write(f"This is document {i+1} with specific content.")
+                    files.append(temp_file.name)
+    
+            # Mock file creation
+            with patch.object(mock_openai_client.files, "create") as mock_create:
+                mock_file = MagicMock()
+                mock_file.id = "file-123456"
+                mock_create.return_value = mock_file
+    
+                # Expected response including information about all files
+                expected_response = "I analyzed all 3 documents."
+    
+                # Mock the invoke response
+                with patch.object(agent.client, "invoke", return_value=expected_response):
+                    # Test multiple file handling
+                    response = agent.invoke("user", "Analyze all these files together.", files=files)
+    
+                    # Verify all files were processed
+>                   assert mock_create.call_count == 3
+E                   AssertionError: assert 0 == 3
+E                    +  where 0 = <MagicMock name='create' id='2303689358160'>.call_count
+
+tests\features\test_rag.py:218: AssertionError
+________________ TestToolFunctionality.test_agent_using_tools _________________
+
+self = <tests.features.test_tools.TestToolFunctionality object at 0x000002185E94FED0>
+mock_anthropic_client = <tests.utils.client_mocks.MockAnthropic object at 0x000002185EA61250>
+sample_tools = [<imengine.utils.tools.Tool object at 0x000002185E967E90>, <imengine.utils.tools.Tool object at 0x000002185E965C50>, <imengine.utils.tools.Tool object at 0x000002185E967E50>]
+
+    def test_agent_using_tools(self, mock_anthropic_client, sample_tools):
+        """Test that an agent can use tools to complete tasks."""
+        # Create an agent with tools
+>       agent = Agent(
+            mock_anthropic_client,
+            model="claude-3-5-haiku-latest",
+            name="ToolUser",
+            system_prompt="You are an agent that uses tools to solve problems.",
+            tools=sample_tools
+        )
+
+tests\features\test_tools.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <imengine.agent.Agent object at 0x000002185E966910>
+client = <tests.utils.client_mocks.MockAnthropic object at 0x000002185EA61250>
+model = 'claude-3-5-haiku-latest', name = 'ToolUser'
+system_prompt = 'You are an agent that uses tools to solve problems.'
+description = '', files = [], shared_memory = None
+tools = [<imengine.utils.tools.Tool object at 0x000002185E967E90>, <imengine.utils.tools.Tool object at 0x000002185E965C50>, <imengine.utils.tools.Tool object at 0x000002185E967E50>]
+
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: List[str] = [], shared_memory: List['Agent'] = None, tools: List[Tool] = []) -> None:
+        if isinstance(client, (AsyncOpenAI, OpenAI)):
+            self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
+        elif isinstance(client, (AsyncAnthropic, Anthropic)):
+            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools) # Excluding 'files' since Anthropic doesn't support RAG
+        else:
+            raise ValueError("Client must be an instance of AsyncOpenAI, OpenAI, AsyncAnthropic, or Anthropic")
+        self.model = self.client.model
+        self.name = self.client.name
+        self.system_prompt = self.client.system_prompt
+        self.messages = self.client.messages
+        self.description = self.client.description
+        self.shared_memory = shared_memory
+>       self.files = self.client.files
+E       AttributeError: 'AnthropicAgent' object has no attribute 'files'
+
+src\imengine\agent.py:64: AttributeError
+_____________ TestToolFunctionality.test_tool_formatting_for_api ______________
+
+self = <tests.features.test_tools.TestToolFunctionality object at 0x000002185E95C550>
+basic_tools = [<imengine.utils.tools.Tool object at 0x000002185EA62C50>, <imengine.utils.tools.Tool object at 0x000002185EA62C10>]
+
+    def test_tool_formatting_for_api(self, basic_tools):
+        """Test that tools can be formatted for different LLM APIs."""
+        from imengine.utils.tools import format_tools_for_api
+    
+        # Format for OpenAI
+        openai_tools = format_tools_for_api(basic_tools, api="openai")
+    
+        # Verify the OpenAI format
+        assert len(openai_tools) == 2
+        assert openai_tools[0]["type"] == "function"
+        assert "function" in openai_tools[0]
+        assert "name" in openai_tools[0]["function"]
+        assert "description" in openai_tools[0]["function"]
+        assert "parameters" in openai_tools[0]["function"]
+    
+        # Format for Anthropic
+>       anthropic_tools = format_tools_for_api(basic_tools, api="anthropic")
+
+tests\features\test_tools.py:105: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\imengine\utils\tools.py:152: in format_tools_for_api
+    return [tool.format_for_api(api) for tool in tools]
+src\imengine\utils\tools.py:152: in <listcomp>
+    return [tool.format_for_api(api) for tool in tools]
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <imengine.utils.tools.Tool object at 0x000002185EA62C50>
+api = 'anthropic'
+
+    def format_for_api(self, api="openai"):
+        """
+        Format the tool for a specific API.
+    
+        Args:
+            api: The API to format for ("openai" or "anthropic")
+    
+        Returns:
+            Dict containing the formatted tool definition
+        """
+        if api == "openai":
+            return self._formatted_tool
+        elif api == "anthropic":
+            # TODO: Implement Anthropic formatting when needed
+>           raise NotImplementedError("Anthropic tool formatting not yet implemented")
+E           NotImplementedError: Anthropic tool formatting not yet implemented
+
+src\imengine\utils\tools.py:107: NotImplementedError
+______________ TestToolFunctionality.test_agent_with_async_tool _______________
+
+self = <tests.features.test_tools.TestToolFunctionality object at 0x000002185E95CBD0>
+mock_anthropic_client = <tests.utils.client_mocks.MockAnthropic object at 0x000002185EB61D10>
+
+    def test_agent_with_async_tool(self, mock_anthropic_client):
+        """Test that an agent can use async tools."""
+        # Define an async tool
+        async def fetch_data(url):
+            # This would normally be an async HTTP request
+            return f"Data from {url}"
+    
+        async_tool = Tool(
+            name="fetch_data",
+            description="Fetch data from a URL",
+            function=fetch_data,
+            parameters=[
+                {
+                    "name": "url",
+                    "type": str,
+                    "description": "The URL to fetch data from"
+                }
+            ]
+        )
+    
+        # Create an agent with the async tool
+>       agent = Agent(
+            mock_anthropic_client,
+            model="claude-3-5-haiku-latest",
+            name="AsyncToolUser",
+            system_prompt="You are an agent that uses async tools.",
+            tools=[async_tool]
+        )
+
+tests\features\test_tools.py:134: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <imengine.agent.Agent object at 0x000002185E95C5D0>
+client = <tests.utils.client_mocks.MockAnthropic object at 0x000002185EB61D10>
+model = 'claude-3-5-haiku-latest', name = 'AsyncToolUser'
+system_prompt = 'You are an agent that uses async tools.', description = ''
+files = [], shared_memory = None
+tools = [<imengine.utils.tools.Tool object at 0x000002185E95EE50>]
+
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: List[str] = [], shared_memory: List['Agent'] = None, tools: List[Tool] = []) -> None:
+        if isinstance(client, (AsyncOpenAI, OpenAI)):
+            self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
+        elif isinstance(client, (AsyncAnthropic, Anthropic)):
+            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools) # Excluding 'files' since Anthropic doesn't support RAG
+        else:
+            raise ValueError("Client must be an instance of AsyncOpenAI, OpenAI, AsyncAnthropic, or Anthropic")
+        self.model = self.client.model
+        self.name = self.client.name
+        self.system_prompt = self.client.system_prompt
+        self.messages = self.client.messages
+        self.description = self.client.description
+        self.shared_memory = shared_memory
+>       self.files = self.client.files
+E       AttributeError: 'AnthropicAgent' object has no attribute 'files'
+
+src\imengine\agent.py:64: AttributeError
+=========================== short test summary info ===========================
+FAILED tests/features/test_agent_interaction.py::TestAgentInteraction::test_conversation_memory
+FAILED tests/features/test_agent_interaction.py::TestAgentInteraction::test_multi_agent_collaboration
+FAILED tests/features/test_agent_interaction.py::TestAgentInteraction::test_cross_agent_memory_access
+FAILED tests/features/test_agent_interaction.py::TestAgentInteraction::test_multi_step_reasoning
+FAILED tests/features/test_image_capabilities.py::TestImageCapabilities::test_agent_with_image_input
+FAILED tests/features/test_image_capabilities.py::TestImageCapabilities::test_image_message_formatting
+FAILED tests/features/test_image_capabilities.py::TestImageCapabilities::test_multi_image_handling
+FAILED tests/features/test_image_capabilities.py::TestImageCapabilities::test_image_agent_in_graph
+FAILED tests/features/test_rag.py::TestRAGFunctionality::test_openai_text_file_processing
+FAILED tests/features/test_rag.py::TestRAGFunctionality::test_openai_large_file_processing
+FAILED tests/features/test_rag.py::TestRAGFunctionality::test_openai_image_file_processing
+FAILED tests/features/test_rag.py::TestRAGFunctionality::test_unsupported_file_handling
+FAILED tests/features/test_rag.py::TestRAGFunctionality::test_openai_rag_content_reaching_agent
+FAILED tests/features/test_rag.py::TestRAGFunctionality::test_openai_multiple_file_processing
+FAILED tests/features/test_tools.py::TestToolFunctionality::test_agent_using_tools
+FAILED tests/features/test_tools.py::TestToolFunctionality::test_tool_formatting_for_api
+FAILED tests/features/test_tools.py::TestToolFunctionality::test_agent_with_async_tool
+======================== 17 failed, 3 passed in 0.52s =========================
+[0;31mTests failed. Check the output above for details.[0m

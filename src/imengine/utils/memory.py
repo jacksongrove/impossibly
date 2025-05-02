@@ -4,7 +4,13 @@ A data structure to track global memory of all Agents within a Graph. Stores eac
 
 from __future__ import annotations
 import asyncio
+from typing import TYPE_CHECKING, List
+
 from imengine.utils.start_end import END
+
+if TYPE_CHECKING:
+    from imengine import Agent  # Import only for type checking
+
 
 class Memory:
     def __init__(self):
@@ -43,7 +49,7 @@ class Memory:
         }
         self.memory.append(new)
     
-    def get(self, author: list['Agent'], recipient: list['Agent']):
+    def get(self, author: List['Agent'], recipient: List['Agent']):
         """
         Public method that transparently handles both sync and async execution.
         
@@ -65,11 +71,11 @@ class Memory:
             # No event loop exists, create one
             return asyncio.run(self._get_async(author, recipient))
     
-    async def _get_async(self, author: list['Agent'], recipient: list['Agent']):
+    async def _get_async(self, author: List['Agent'], recipient: List['Agent']):
         """Internal async implementation of get."""
         return [m for m in self.memory if m['author'] in author and m['recipient'] in recipient]
     
-    def get_formatted(self, author: list['Agent'], recipient: list['Agent']):
+    def get_formatted(self, author: List['Agent'], recipient: List['Agent']):
         """
         Public method that transparently handles both sync and async execution.
         
@@ -91,7 +97,7 @@ class Memory:
             # No event loop exists, create one
             return asyncio.run(self._get_formatted_async(author, recipient))
     
-    async def _get_formatted_async(self, author: list['Agent'], recipient: list['Agent']):
+    async def _get_formatted_async(self, author: List['Agent'], recipient: List['Agent']):
         '''
         Internal async implementation to format messages between specified authors and recipients.
         '''

@@ -4,6 +4,7 @@ Defines individual agent types to be called within the graph structure.
 Author: Jackson Grove
 '''
 import os, shutil, textwrap, base64, asyncio, inspect
+from typing import Union, List
 from openai import AsyncOpenAI, OpenAI
 from openai import File
 from anthropic import AsyncAnthropic, Anthropic
@@ -47,11 +48,11 @@ class Agent:
         ValueError: If the provided client is not an instance of either OpenAI or Anthropic.
     '''
 
-    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: list[str] = [], shared_memory: list['Agent'] = None, tools: list[Tool] = []) -> None:
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: List[str] = [], shared_memory: List['Agent'] = None, tools: List[Tool] = []) -> None:
         if isinstance(client, (AsyncOpenAI, OpenAI)):
             self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
         elif isinstance(client, (AsyncAnthropic, Anthropic)):
-            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools)
+            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools) # Excluding 'files' since Anthropic doesn't support RAG
         else:
             raise ValueError("Client must be an instance of AsyncOpenAI, OpenAI, AsyncAnthropic, or Anthropic")
         self.model = self.client.model
@@ -60,10 +61,17 @@ class Agent:
         self.messages = self.client.messages
         self.description = self.client.description
         self.shared_memory = shared_memory
-        self.files = self.client.files
+        
+        # Set files attribute based on client type - Anthropic doesn't support RAG
+        if isinstance(self.client, OpenAIAgent):
+            self.files = self.client.files
+        else:
+            # For Anthropic, set to empty list
+            self.files = []
+            
         self.tools = tools
 
-    def invoke(self, author: str, prompt: str, files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+    def invoke(self, author: str, prompt: str, files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
         '''
         Public method that transparently handles both sync and async execution.
         
@@ -97,7 +105,7 @@ class Agent:
             # No event loop exists, create one
             return asyncio.run(self._invoke_async(author, prompt, files, edges, show_thinking))
 
-    async def _invoke_async(self, author: str, prompt: str, files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+    async def _invoke_async(self, author: str, prompt: str, files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
         '''
         Internal async implementation of invoke.
         
@@ -115,7 +123,7 @@ class Agent:
 
 
 class OpenAIAgent:
-    def __init__(self, client: AsyncOpenAI | OpenAI, system_prompt: str, model: str = "gpt-4o", name: str = "agent", description: str = "A general purpose agent", routing_instructions: str = "", files: list[str] = [], tools: list[Tool] = []) -> None:
+    def __init__(self, client: Union[AsyncOpenAI, OpenAI], system_prompt: str, model: str = "gpt-4o", name: str = "agent", description: str = "A general purpose agent", routing_instructions: str = "", files: List[str] = [], tools: List[Tool] = []) -> None:
         self.client = client
         self.is_async = isinstance(client, AsyncOpenAI)
         self.model = model
@@ -135,7 +143,7 @@ class OpenAIAgent:
             
         self.tools = tools
 
-    async def init_rag_files_async(self, files: list[str]) -> list['File']:
+    async def init_rag_files_async(self, files: List[str]) -> List['File']:
         '''
         Asynchronously initializes and uploads files for Retrieval-Augmented Generation (RAG) purposes.
         '''
@@ -164,7 +172,7 @@ class OpenAIAgent:
                 
         return file_objects
     
-    def init_rag_files_sync(self, files: list[str]) -> list['File']:
+    def init_rag_files_sync(self, files: List[str]) -> List['File']:
         '''
         Synchronously initializes and uploads files for Retrieval-Augmented Generation (RAG) purposes.
         '''
@@ -193,7 +201,7 @@ class OpenAIAgent:
                 
         return file_objects
 
-    def init_input_files(self, files: list[str]) -> list['File']:
+    def init_input_files(self, files: List[str]) -> List['File']:
         '''
         Initializes and uploads input files for various purposes based on their type.
 
@@ -320,7 +328,7 @@ class OpenAIAgent:
             raise ValueError(f"Failed to encode image at {image_path}: {str(e)}")
 
 
-    async def invoke(self, author: str, chat_prompt: str = "", files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+    async def invoke(self, author: str, chat_prompt: str = "", files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
         '''
         Prompts the model, returning a text response. System instructions, routing options and chat history are aggregated into the prompt in the following format:
             """
@@ -507,7 +515,7 @@ class OpenAIAgent:
 
 
 class AnthropicAgent:
-    def __init__(self, client: AsyncAnthropic | Anthropic, system_prompt: str, model: str = "claude-3-opus-20240229", name: str = "agent", description: str = "A general purpose agent", tools: list[Tool] = []) -> None:
+    def __init__(self, client: Union[AsyncAnthropic, Anthropic], system_prompt: str, model: str = "claude-3-opus-20240229", name: str = "agent", description: str = "A general purpose agent", tools: List[Tool] = []) -> None:
         self.client = client
         self.is_async = isinstance(client, AsyncAnthropic)
         self.model = model
@@ -516,7 +524,6 @@ class AnthropicAgent:
         self.description = description
         self.messages = [{"role": "system", "content": system_prompt}]
         self.tools = tools
-        self.files = []
         
     def _log_thinking(self, chat_prompt: str) -> None:
         '''
@@ -548,44 +555,41 @@ class AnthropicAgent:
         print(f"{yellow}System Prompt:{reset} {self.system_prompt}\n")
         print(f"{yellow}Chat Prompt:{reset}\n" + format_text(chat_prompt) + "\n")
 
-    async def invoke(self, author: str, prompt: str = "", files: list[str] = [], edges: list['Agent'] = None, show_thinking: bool = False) -> str:
+    async def invoke(self, author: str, prompt: str = "", files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
         '''
         Prompts the model, returning a text response. System instructions, routing options and chat history are aggregated into the prompt.
 
         Args:
+            author (str): The role of the message sender ('user', 'assistant')
             prompt (str): Content to prompt the chat model with
+            files (list[str]): List of file paths to include in the prompt
             edges (list[Agent]): Available agent routing options
             show_thinking (bool): Enables log printing of prompt and response from model
 
         Returns:
             str: The model's response to the prompt
         '''
-        # Add the prompt to the message history
+        # Create a message with the prompt
         msg = {"role": author, "content": prompt}
+        
+        # Handle any passed files by just noting their presence in the prompt
+        # This doesn't implement full RAG functionality but acknowledges the files
+        if files and len(files) > 0:
+            file_list = ", ".join([os.path.basename(f) for f in files])
+            # Modify the prompt to include information about the files
+            prompt += f"\n\n[Note: User has provided these files: {file_list}. However, file content processing is not currently available.]"
+            msg = {"role": author, "content": prompt}
+            
+        # Add message to history
         self.messages.append(msg)
 
         # Format the messages list for the Anthropic API
-        # Anthropic has a unique message structure compared to OpenAI
         formatted_messages = []
-        for i, msg in enumerate(self.messages):
-            if i == 0 and msg["role"] == "user":
-                # For the first message (system prompt), add it as a system message
-                formatted_messages.append({
-                    "role": "user",
-                    "content": msg["content"]
-                })
-                # Add the first assistant response (to acknowledge the system prompt)
-                formatted_messages.append({
-                    "role": "assistant", 
-                    "content": "I understand. I'll follow these instructions."
-                })
-            else:
-                # For regular messages, just add them as is
-                formatted_messages.append(msg)
+        for msg in self.messages:
+            formatted_messages.append(msg)
 
         # Add routing information as needed
         if edges and len(edges) > 1:
-            # Note: This routing structure may need adjustment for Anthropic's API
             routing_info = "\n\n--- Optional Routing ---\nYou can choose to route to one of the following agents:\n"
             for edge in edges:
                 if edge != END:
@@ -614,14 +618,12 @@ class AnthropicAgent:
             response = await self.client.messages.create(
                 model=self.model,
                 messages=formatted_messages,
-                # max_tokens=2000
             )
         else:
             # Synchronous call
             response = self.client.messages.create(
                 model=self.model,
                 messages=formatted_messages,
-                # max_tokens=2000
             )
 
         # Extract the response content
