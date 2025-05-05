@@ -17,6 +17,7 @@ sys.path.insert(0, str(SRC_DIR))
 
 # Import the utility functions
 from tests.utils.client_mocks import create_mock_anthropic, create_mock_openai
+from imagination_engine import Tool
 
 
 @pytest.fixture
@@ -50,8 +51,6 @@ def mock_clients(mock_anthropic_client, mock_openai_client):
 @pytest.fixture
 def basic_tools():
     """Create a set of basic tools for testing."""
-    from imengine import Tool
-    
     # Simple calculator tool
     def add_numbers(a, b):
         return a + b
@@ -97,8 +96,6 @@ def basic_tools():
 @pytest.fixture
 def sample_tools():
     """Create a set of sample tools for testing."""
-    from imengine import Tool
-    
     # 1. Simple calculator tool
     def add_numbers(a, b):
         return a + b

@@ -1,13 +1,13 @@
 # This file can be empty or used for package-level initialization. 
 
 """
-ImEngine - Modular, extensible agent framework for building multi-agent systems.
+Imagination Engine - Modular, extensible agent framework for building multi-agent systems.
 
-Key components can be imported directly from imengine:
-    from imengine import Agent, Graph
+Key components can be imported directly from imagination_engine:
+    from imagination_engine import Agent, Graph
     # or
-    import imengine
-    agent = imengine.Agent(...)
+    import imagination_engine
+    agent = imagination_engine.Agent(...)
 """
 
 # Core components

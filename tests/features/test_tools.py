@@ -11,7 +11,8 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 # Import the necessary components
-from imengine import Agent, Tool, START, END
+from imagination_engine import Agent, Tool, START, END
+from imagination_engine.utils.tools import format_tools_for_api
 
 
 @pytest.mark.tools
@@ -82,8 +83,6 @@ class TestToolFunctionality:
     @pytest.mark.tools
     def test_tool_formatting_for_api(self, basic_tools):
         """Test that tools can be formatted for different LLM APIs."""
-        from imengine.utils.tools import format_tools_for_api
-        
         # Format for OpenAI
         openai_tools = format_tools_for_api(basic_tools, api="openai")
         
