@@ -110,3 +110,70 @@ imengine-test run --help
 ```
 
 See [tests/README.md](tests/README.md) for more details on the testing framework and available options.
+
+## Local Development and Running Examples
+
+If you want to develop locally and test the examples, follow these steps:
+
+### Building the Package Locally
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/jacksongrove/imagination-engine.git
+   cd imagination-engine
+   ```
+
+2. Create and activate a virtual environment (optional but recommended):
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+3. Install development dependencies:
+   ```bash
+   pip install -e ".[dev]"
+   ```
+
+4. Build the package locally:
+   ```bash
+   python -m build
+   ```
+   This will create distributions in the `dist/` directory.
+
+### Installing the Local Build to Run Examples
+
+There are two approaches to use your local build:
+
+#### Option 1: Install in Development Mode (Recommended)
+
+This allows changes to the source code to be immediately reflected without reinstalling:
+
+```bash
+pip install -e .
+```
+
+#### Option 2: Install the Built Wheel
+
+If you want to test the exact distribution that would be uploaded to PyPI:
+
+```bash
+pip install dist/imengine-0.1.0-py3-none-any.whl
+```
+
+### Running Examples
+
+Once you've installed the package using either method, you can run the examples:
+
+```bash
+# Set up your environment variables first
+cp .env.template .env
+# Edit .env to add your API keys
+
+# Run an example
+python examples/image_agent/image_agent.py
+
+# Or try another example
+python examples/web_search_agent/web_search_agent.py
+```
+
+Make sure the required dependencies for each example are installed and the necessary API keys are in your `.env` file.
