@@ -42,7 +42,7 @@ dev_requires = test_requires + [
 
 setup(
     name="imagination-engine",
-    version="0.1.0",
+    version="0.1.1",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     install_requires=core_requires,
