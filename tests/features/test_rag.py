@@ -12,7 +12,7 @@ import pytest
 import tempfile
 import json
 from unittest.mock import patch, MagicMock, call
-from imengine.agent import Agent
+from imagination_engine.agent import Agent
 from tests.utils.client_mocks import MockOpenAI
 
 
