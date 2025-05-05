@@ -34,66 +34,68 @@ pip install -e ".[dev]"
 
 ## Running Tests
 
-### Using the CLI Command
+To run the tests, first install the package with test dependencies:
 
-The most elegant way to run tests is to use the provided CLI command, which gets installed with the package:
+```bash
+# Install with test dependencies
+pip install -e ".[test]"
+```
+
+Then run the tests using the CLI command that gets installed with the package:
 
 ```bash
 # Run all tests
-imengine-test run
+imagination-engine run
 
-# Run specific feature tests
-imengine-test run --path features/
+# Run just feature tests
+imagination-engine run --path features/
 
 # Run tests in Docker
-imengine-test run --docker
+imagination-engine run --docker
 
 # Get help
-imengine-test run --help
+imagination-engine run --help
 ```
 
-This Python-based command works from any directory and avoids the need for shell scripts.
+## CLI Options
 
-### Using pytest Directly
-
-You can also run pytest directly:
+### Basic Options
 
 ```bash
-# Run all tests
-python -m pytest tests/
+# Run tests with verbose output
+imagination-engine run
 
-# Run feature tests only
-python -m pytest tests/features/
+# Run tests without verbose output
+imagination-engine run --no-verbose
 
-# Run a specific test file
-python -m pytest tests/features/test_agent_interaction.py
+# Run tests with code coverage report
+imagination-engine run --cov
 
-# Run a specific test case
-python -m pytest tests/features/test_agent_interaction.py::TestAgentInteraction::test_conversation_memory
+# Run tests for a specific test path (relative to tests directory)
+imagination-engine run --path features/test_agent_interaction.py
+
+# Run tests matching a specific pattern
+imagination-engine run --filter test_conversation
+
+# Just collect tests without running them
+imagination-engine run --collect-only
 ```
 
-### Verifying Test Discovery
-
-To check which tests will be run without actually running them:
+### Cleaning Options
 
 ```bash
-# Using the CLI command
-imengine-test run --collect-only
-
-# Using pytest directly
-python -m pytest tests/ --collect-only -v
+# Clean up pytest cache and temporary files before running tests
+imagination-engine run --clean
 ```
 
-## Docker Testing
-
-You can run tests in Docker using the CLI command:
+### Docker Options
 
 ```bash
 # Run tests in Docker
-imengine-test run --docker
+imagination-engine run --docker
 
-# Clean up Docker resources
-imengine-test run --docker --clean-docker
+# Run tests in Docker and clean up Docker containers and images afterward
+imagination-engine run --docker --clean-docker
 ```
 
 ## Test Configuration

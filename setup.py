@@ -39,7 +39,7 @@ dev_requires = test_requires + [
 ]
 
 setup(
-    name="imengine",
+    name="imagination-engine",
     version="0.1.0",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
@@ -60,7 +60,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "imengine-test=imengine.cli.test_commands:tests",
+            "imagination-engine=imagination_engine.cli.test_commands:tests",
         ],
     },
     description="An agentic architecture for idea generation & critical thinking",
