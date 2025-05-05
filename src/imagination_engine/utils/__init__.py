@@ -1,9 +1,9 @@
 # This file can be empty or used for package-level initialization. 
 
 """
-ImEngine utility modules.
+Imagination Engine utility modules.
 
-These utilities provide support functionality for the core ImEngine components.
+These utilities provide support functionality for the core Imagination Engine components.
 """
 
 # Core utilities
