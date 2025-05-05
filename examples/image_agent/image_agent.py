@@ -3,6 +3,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from imengine import Agent, Graph, START, END
 
+# Define the path to the image file
+IMAGE_PATH = Path(__file__).parent / "image_input.jpeg"
+
 
 def __main__():
     # Load environment variables from .env file
@@ -13,8 +16,7 @@ def __main__():
             "OpenAI API key is not set. Please check your .env file."
         )
 
-    # Define the path to the image file
-    IMAGE_PATH = Path(__file__).parent / "image_input.jpeg"
+    # Check if the image file exists
     if not IMAGE_PATH.exists():
         raise FileNotFoundError(f"Image file not found at {IMAGE_PATH}")
 
