@@ -32,6 +32,10 @@ dev_requires = test_requires + [
     "flake8>=6.0.0", 
     "isort>=5.0.0",
     "mypy>=1.0.0",
+    "build>=1.0.0",
+    "wheel>=0.40.0",
+    "twine>=4.0.0",
+    "setuptools>=61.0.0",
 ]
 
 setup(
