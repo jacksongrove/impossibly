@@ -4,7 +4,7 @@ Defines individual agent types to be called within the graph structure.
 Author: Jackson Grove
 '''
 import os, shutil, textwrap, base64, asyncio, inspect
-from typing import Union, List
+from typing import Union, List, Optional, AsyncGenerator
 from openai import AsyncOpenAI, OpenAI
 from openai import File
 from anthropic import AsyncAnthropic, Anthropic
@@ -12,8 +12,10 @@ from imagination_engine.utils.start_end import END
 from imagination_engine.utils.memory import Memory
 from imagination_engine.utils.tools import Tool, format_tools_for_api
 
-#TODO: Add shared memory to agent (list of agents to read memory from)
-#TODO: Add tool use
+# Completed TODO items:
+# - Added shared memory to agent
+# - Added tool use functionality
+# - Added streaming functionality
 
 class Agent:
     '''
@@ -34,6 +36,9 @@ class Agent:
         description (str, optional): An additional description for the agent. Defaults to an empty string.
         shared_memory (list, optional): A list of agents to read memory from. Defaults to an empty list.
         tools (list[Tool], optional): A list of Tool instances that the agent can use. Defaults to an empty list.
+        streaming (bool, optional): Whether to stream the output. Defaults to False.
+                                   When True, the agent will return chunks of its response as they're generated
+                                   rather than waiting for the complete response.
 
     Attributes:
         client: The underlying agent instance (either OpenAIAgent or AnthropicAgent).
@@ -43,16 +48,18 @@ class Agent:
         description (str): An additional description for the agent.
         shared_memory (list of Agents): A list of agents to read memory from.
         tools (list[Tool]): A list of tools available to the agent.
+        streaming (bool): Whether to stream the output as it's generated.
+                         This property propagates to the underlying implementation.
 
     Raises:
         ValueError: If the provided client is not an instance of either OpenAI or Anthropic.
     '''
 
-    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: List[str] = [], shared_memory: List['Agent'] = None, tools: List[Tool] = []) -> None:
+    def __init__(self, client, model: str = "gpt-4o", name: str = "agent", system_prompt: str = "You are a helpful assistant.", description: str = "", files: List[str] = [], shared_memory: List['Agent'] = None, tools: List[Tool] = [], streaming: bool = False) -> None:
         if isinstance(client, (AsyncOpenAI, OpenAI)):
-            self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools)
+            self.client = OpenAIAgent(client, system_prompt, model, name, description, routing_instructions="", files=files, tools=tools, streaming=streaming)
         elif isinstance(client, (AsyncAnthropic, Anthropic)):
-            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools) # Excluding 'files' since Anthropic doesn't support RAG
+            self.client = AnthropicAgent(client, system_prompt, model, name, description, tools=tools, streaming=streaming) # Excluding 'files' since Anthropic doesn't support RAG
         else:
             raise ValueError("Client must be an instance of AsyncOpenAI, OpenAI, AsyncAnthropic, or Anthropic")
         self.model = self.client.model
@@ -61,6 +68,7 @@ class Agent:
         self.messages = self.client.messages
         self.description = self.client.description
         self.shared_memory = shared_memory
+        self._streaming = streaming  # Use private attribute for property implementation
         
         # Set files attribute based on client type - Anthropic doesn't support RAG
         if isinstance(self.client, OpenAIAgent):
@@ -71,7 +79,45 @@ class Agent:
             
         self.tools = tools
 
-    def invoke(self, author: str, prompt: str, files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
+    @property
+    def streaming(self) -> bool:
+        """
+        Property getter for the streaming status.
+        
+        Returns:
+            bool: Whether streaming is enabled for this agent.
+        """
+        return self._streaming
+    
+    @streaming.setter
+    def streaming(self, value: bool) -> None:
+        """
+        Property setter for the streaming flag that propagates to the underlying implementation.
+        
+        This ensures that when the streaming flag is set on the Agent wrapper, it's also set
+        on the concrete implementation (OpenAIAgent or AnthropicAgent).
+        
+        Args:
+            value (bool): Whether to enable streaming for this agent.
+        """
+        self._streaming = value
+        # Also set the streaming flag on the actual client implementation
+        if hasattr(self, 'client') and self.client is not None:
+            self.client.streaming = value
+            
+    def set_streaming(self, value: bool) -> None:
+        """
+        Explicit method to set the streaming flag and propagate to the subagent.
+        
+        This method provides a more explicit alternative to the property setter,
+        making it clear in code when streaming is being enabled or disabled.
+        
+        Args:
+            value (bool): Whether to enable streaming for this agent.
+        """
+        self.streaming = value
+        
+    def invoke(self, author: str, prompt: str, files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> Union[str, AsyncGenerator[str, None]]:
         '''
         Public method that transparently handles both sync and async execution.
         
@@ -89,7 +135,9 @@ class Agent:
             show_thinking (bool, optional): Whether to show the agent's thinking process. Defaults to False.
             
         Returns:
-            str: The agent's response.
+            Union[str, AsyncGenerator[str, None]]: 
+                - If streaming is disabled: The complete response as a string
+                - If streaming is enabled: An async generator that yields chunks of the response as they're generated
         '''
         try:
             # Check if we're in an event loop
@@ -105,7 +153,7 @@ class Agent:
             # No event loop exists, create one
             return asyncio.run(self._invoke_async(author, prompt, files, edges, show_thinking))
 
-    async def _invoke_async(self, author: str, prompt: str, files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
+    async def _invoke_async(self, author: str, prompt: str, files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> Union[str, AsyncGenerator[str, None]]:
         '''
         Internal async implementation of invoke.
         
@@ -117,13 +165,15 @@ class Agent:
             show_thinking (bool, optional): Whether to show the agent's thinking process. Defaults to False.
             
         Returns:
-            str: The agent's response.
+            Union[str, AsyncGenerator[str, None]]: 
+                - If streaming is disabled: The complete response as a string
+                - If streaming is enabled: An async generator that yields chunks of the response as they're generated
         '''
         return await self.client.invoke(author, prompt, files, edges, show_thinking)
 
 
 class OpenAIAgent:
-    def __init__(self, client: Union[AsyncOpenAI, OpenAI], system_prompt: str, model: str = "gpt-4o", name: str = "agent", description: str = "A general purpose agent", routing_instructions: str = "", files: List[str] = [], tools: List[Tool] = []) -> None:
+    def __init__(self, client: Union[AsyncOpenAI, OpenAI], system_prompt: str, model: str = "gpt-4o", name: str = "agent", description: str = "A general purpose agent", routing_instructions: str = "", files: List[str] = [], tools: List[Tool] = [], streaming: bool = False) -> None:
         self.client = client
         self.is_async = isinstance(client, AsyncOpenAI)
         self.model = model
@@ -134,6 +184,7 @@ class OpenAIAgent:
         self.messages = [
             {"role": "system", "content": system_prompt}
         ]
+        self.streaming = streaming  # Whether to stream responses in real-time
         
         # Initialize RAG files differently depending on sync/async client
         if self.is_async:
@@ -328,9 +379,10 @@ class OpenAIAgent:
             raise ValueError(f"Failed to encode image at {image_path}: {str(e)}")
 
 
-    async def invoke(self, author: str, chat_prompt: str = "", files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
+    async def invoke(self, author: str, chat_prompt: str = "", files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> Union[str, AsyncGenerator[str, None]]:
         '''
-        Prompts the model, returning a text response. System instructions, routing options and chat history are aggregated into the prompt in the following format:
+        Prompts the model, returning a text response or stream. System instructions, routing options and chat history 
+        are aggregated into the prompt in the following format:
             """
             ## System Instructions:
                 {system_prompt}
@@ -345,12 +397,16 @@ class OpenAIAgent:
             """
 
         Args:
+            author (str): The role of the message author ('user', 'system', 'assistant', etc.)
             chat_prompt (str): Content to prompt the chat model with
+            files (list[str]): Files to include with the message (images, etc.)
             edges (list[Agent]): Available agent routing options
             show_thinking (bool): Enables log printing of prompt and response from model
 
         Returns:
-            str: The model's response to the prompt
+            Union[str, AsyncGenerator[str, None]]: 
+                - If streaming is disabled: The complete response as a string
+                - If streaming is enabled: An async generator that yields chunks of the response as they're generated
         '''
         # Build the message prompt and history
         prompt = ""
@@ -409,20 +465,39 @@ class OpenAIAgent:
         # Call the OpenAI API based on client type (sync or async)
         if self.is_async:
             # Asynchronous call
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                tools=tools,
-                tool_choice="auto" if tools else None
-            )
+            if self.streaming:
+                # Return the stream directly
+                return self._stream_response(messages, tools)
+            else:
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    tools=tools,
+                    tool_choice="auto" if tools else None
+                )
         else:
             # Synchronous call
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                tools=tools,
-                tool_choice="auto" if tools else None
-            )
+            if self.streaming:
+                # For sync client, we need to create an async generator that yields chunks
+                async def sync_stream():
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=messages,
+                        tools=tools,
+                        tool_choice="auto" if tools else None,
+                        stream=True
+                    )
+                    for chunk in response:
+                        if chunk.choices[0].delta.content:
+                            yield chunk.choices[0].delta.content
+                return sync_stream()
+            else:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    tools=tools,
+                    tool_choice="auto" if tools else None
+                )
 
         # Extract the response text
         response_message = response.choices[0].message
@@ -488,17 +563,30 @@ class OpenAIAgent:
             
             # Get a new response that uses the tool call results
             if self.is_async:
-                # Asynchronous call 
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=self.messages
-                )
+                if self.streaming:
+                    return self._stream_response(self.messages)
+                else:
+                    response = await self.client.chat.completions.create(
+                        model=self.model,
+                        messages=self.messages
+                    )
             else:
-                # Synchronous call
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=self.messages
-                )
+                if self.streaming:
+                    async def sync_stream():
+                        response = self.client.chat.completions.create(
+                            model=self.model,
+                            messages=self.messages,
+                            stream=True
+                        )
+                        for chunk in response:
+                            if chunk.choices[0].delta.content:
+                                yield chunk.choices[0].delta.content
+                    return sync_stream()
+                else:
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=self.messages
+                    )
             
             # Update the response message
             response_message = response.choices[0].message
@@ -513,9 +601,46 @@ class OpenAIAgent:
 
         return response_text
 
+    async def _stream_response(self, messages: List[dict], tools: Optional[List[dict]] = None) -> AsyncGenerator[str, None]:
+        """
+        Helper method to handle streaming responses from OpenAI.
+        
+        This method creates a streaming request to the OpenAI API and yields chunks of the
+        response as they're generated. It also collects all chunks to update the message history
+        once the full response is complete.
+        
+        Args:
+            messages (List[dict]): The messages to send to the API
+            tools (Optional[List[dict]]): Tools to make available to the model
+            
+        Yields:
+            str: Chunks of the response text as they're generated
+            
+        Note:
+            The complete response is saved to the message history after all chunks are received.
+        """
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto" if tools else None,
+            stream=True
+        )
+        
+        collected_content = []
+        async for chunk in response:
+            if chunk.choices[0].delta.content:
+                content = chunk.choices[0].delta.content
+                collected_content.append(content)
+                yield content
+        
+        # Add the complete response to message history
+        complete_response = "".join(collected_content)
+        self.messages.append({"role": "assistant", "content": complete_response})
+
 
 class AnthropicAgent:
-    def __init__(self, client: Union[AsyncAnthropic, Anthropic], system_prompt: str, model: str = "claude-3-opus-20240229", name: str = "agent", description: str = "A general purpose agent", tools: List[Tool] = []) -> None:
+    def __init__(self, client: Union[AsyncAnthropic, Anthropic], system_prompt: str, model: str = "claude-3-opus-20240229", name: str = "agent", description: str = "A general purpose agent", tools: List[Tool] = [], streaming: bool = False) -> None:
         self.client = client
         self.is_async = isinstance(client, AsyncAnthropic)
         self.model = model
@@ -524,7 +649,8 @@ class AnthropicAgent:
         self.description = description
         self.messages = [{"role": "system", "content": system_prompt}]
         self.tools = tools
-        
+        self.streaming = streaming  # Whether to stream responses in real-time
+
     def _log_thinking(self, chat_prompt: str) -> None:
         '''
         Prints the intermediate outputs of the Agent in terminal, making thinking transparent throughout the execution of a Graph. All outputs are formatted to be clearly labelled when printed.
@@ -555,9 +681,10 @@ class AnthropicAgent:
         print(f"{yellow}System Prompt:{reset} {self.system_prompt}\n")
         print(f"{yellow}Chat Prompt:{reset}\n" + format_text(chat_prompt) + "\n")
 
-    async def invoke(self, author: str, prompt: str = "", files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> str:
+    async def invoke(self, author: str, prompt: str = "", files: List[str] = [], edges: List['Agent'] = None, show_thinking: bool = False) -> Union[str, AsyncGenerator[str, None]]:
         '''
-        Prompts the model, returning a text response. System instructions, routing options and chat history are aggregated into the prompt.
+        Prompts the model, returning a text response or stream. System instructions, routing options 
+        and chat history are aggregated into the prompt.
 
         Args:
             author (str): The role of the message sender ('user', 'assistant')
@@ -567,7 +694,9 @@ class AnthropicAgent:
             show_thinking (bool): Enables log printing of prompt and response from model
 
         Returns:
-            str: The model's response to the prompt
+            Union[str, AsyncGenerator[str, None]]: 
+                - If streaming is disabled: The complete response as a string
+                - If streaming is enabled: An async generator that yields chunks of the response as they're generated
         '''
         # Create a message with the prompt
         msg = {"role": author, "content": prompt}
@@ -615,16 +744,30 @@ class AnthropicAgent:
         # Make the API call based on client type (sync or async)
         if self.is_async:
             # Asynchronous call
-            response = await self.client.messages.create(
-                model=self.model,
-                messages=formatted_messages,
-            )
+            if self.streaming:
+                return self._stream_response(formatted_messages)
+            else:
+                response = await self.client.messages.create(
+                    model=self.model,
+                    messages=formatted_messages,
+                )
         else:
             # Synchronous call
-            response = self.client.messages.create(
-                model=self.model,
-                messages=formatted_messages,
-            )
+            if self.streaming:
+                # For sync client, we need to create an async generator that yields chunks
+                async def sync_stream():
+                    with self.client.messages.stream(
+                        model=self.model,
+                        messages=formatted_messages,
+                    ) as stream:
+                        async for text in stream.text_stream:
+                            yield text
+                return sync_stream()
+            else:
+                response = self.client.messages.create(
+                    model=self.model,
+                    messages=formatted_messages,
+                )
 
         # Extract the response content
         response_text = response.content[0].text
@@ -637,3 +780,33 @@ class AnthropicAgent:
             self._log_thinking(response_text)
 
         return response_text
+
+    async def _stream_response(self, messages: List[dict]) -> AsyncGenerator[str, None]:
+        """
+        Helper method to handle streaming responses from Anthropic.
+        
+        This method creates a streaming request to the Anthropic API and yields chunks of the
+        response as they're generated. It also collects all chunks to update the message history
+        once the full response is complete.
+        
+        Args:
+            messages (List[dict]): The messages to send to the API
+            
+        Yields:
+            str: Chunks of the response text as they're generated
+            
+        Note:
+            The complete response is saved to the message history after all chunks are received.
+        """
+        collected_content = []
+        async with self.client.messages.stream(
+            model=self.model,
+            messages=messages,
+        ) as stream:
+            async for text in stream.text_stream:
+                collected_content.append(text)
+                yield text
+        
+        # Add the complete response to message history
+        complete_response = "".join(collected_content)
+        self.messages.append({"role": "assistant", "content": complete_response})

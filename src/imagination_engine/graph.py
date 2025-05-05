@@ -9,7 +9,7 @@ Author: Jackson Grove
 import re
 import asyncio
 import os
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Optional, AsyncGenerator
 from imagination_engine.agent import *
 from imagination_engine.utils.start_end import START, END
 from imagination_engine.utils.memory import Memory
@@ -25,6 +25,7 @@ class Graph:
         edges (dict): A mapping where keys are nodes (Agent instances or special tokens) and 
                       values are lists of adjacent nodes representing outgoing connections.
         nodes: A view of the keys of the edges dictionary.
+        streaming (bool): Whether to stream the final output to the user.
 
     Methods:
         add_node(agent: Union[Agent, List[Agent]]) -> None:
@@ -46,13 +47,14 @@ class Graph:
     Raises:
         ValueError: If an invalid node is referenced (i.e., not added to the graph) during edge addition.
     '''
-    def __init__(self) -> None:
+    def __init__(self, streaming: bool = False) -> None:
         # Initalizing hash map for edges
         self.edges = {
             START: [], 
             END: []
         }
         self.nodes = self.edges.keys()
+        self.streaming = streaming
     
 
     def add_node(self, agent: Union[Agent, List[Agent]]) -> None:
@@ -80,7 +82,8 @@ class Graph:
         '''
         Adds an edge or edges between node1 and node2, routing the output of node1 
         to the input of node2. If either node1 or node2 is a list, an edge is added 
-        for every combination of node1 and node2.
+        for every combination of node1 and node2. If node2 contains END node, then
+        the source node will be set to stream.
         
         Args:
             node1 (Agent or list[Agent]): The node(s) to route from.
@@ -102,9 +105,13 @@ class Graph:
                     if n2 not in self.edges:
                         raise ValueError(f"{n2} is not a valid node in the graph. Please add it first.")
                     self.edges[n1].append(n2)
+                    
+                    # If this is an edge to END and graph streaming is enabled, set the source node's streaming flag
+                    if n2 == END and self.streaming and isinstance(n1, Agent):
+                        n1.set_streaming(True)
 
 
-    def invoke(self, user_prompt: str = "", files: list[str] = [], show_thinking: bool = False) -> str:
+    def invoke(self, user_prompt: str = "", files: list[str] = [], show_thinking: bool = False) -> Union[str, AsyncGenerator[str, None]]:
         """
         Public method that transparently handles both sync and async execution.
         
@@ -129,7 +136,7 @@ class Graph:
             return asyncio.run(self._invoke_async(user_prompt, files, show_thinking))
 
 
-    async def _invoke_async(self, user_prompt: str = "", files: list[str] = [], show_thinking: bool = False) -> str:
+    async def _invoke_async(self, user_prompt: str = "", files: list[str] = [], show_thinking: bool = False) -> Union[str, AsyncGenerator[str, None]]:
         """Internal async implementation of the invoke method."""
         # Output the user prompt if there are no agents defined
         if len(self.nodes) == 2: # (When only START and END nodes are defined)
@@ -148,8 +155,15 @@ class Graph:
             if curr_node.shared_memory:
                 prompt += f'\n\nPrevious messages: \n{await global_memory.get_formatted(curr_node.shared_memory, curr_node.shared_memory)}'
 
+            # Check if this is the final node before END
+            is_final_node = END in self.edges[curr_node]
+
             # Invoke the current node
             output = await curr_node.invoke(author, prompt, selected_files, self.edges[curr_node], show_thinking)
+            
+            # If this is the final node and streaming is enabled, return the stream
+            if is_final_node and self.streaming:
+                return output
             
             # Route to intended node in the case of multiple branching edges
             i = 0
