@@ -412,14 +412,16 @@ class OpenAIAgent:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                tools=tools
+                tools=tools,
+                tool_choice="auto" if tools else None
             )
         else:
             # Synchronous call
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                tools=tools
+                tools=tools,
+                tool_choice="auto" if tools else None
             )
 
         # Extract the response text
@@ -486,7 +488,7 @@ class OpenAIAgent:
             
             # Get a new response that uses the tool call results
             if self.is_async:
-                # Asynchronous call
+                # Asynchronous call 
                 response = await self.client.chat.completions.create(
                     model=self.model,
                     messages=self.messages
