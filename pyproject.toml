@@ -27,6 +27,8 @@ classifiers = [
 dependencies = [
     "python-dotenv>=1.0.0",
     "click>=8.0.0",
+    "openai>=1.0.0",
+    "anthropic>=0.4.0",
 ]
 
 [project.optional-dependencies]

@@ -9,6 +9,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
 core_requires = [
     "python-dotenv>=1.0.0",
     "click>=8.0.0",  # For CLI commands
+    "openai>=1.0.0",  # OpenAI API client
+    "anthropic>=0.4.0",  # Anthropic API client
 ]
 
 # LLM provider dependencies
