@@ -406,9 +406,6 @@ class OpenAIAgent:
         if show_thinking:
             self._log_thinking(prompt)
 
-        # Prepare file_ids for RAG if we have uploaded files
-        file_ids = [file.id for file in self.files] if self.files else None
-
         # Call the OpenAI API based on client type (sync or async)
         if self.is_async:
             # Asynchronous call
@@ -416,8 +413,7 @@ class OpenAIAgent:
                 model=self.model,
                 messages=messages,
                 tools=tools,
-                tool_choice="auto" if tools else None,
-                file_ids=file_ids
+                tool_choice="auto" if tools else None
             )
         else:
             # Synchronous call
@@ -425,8 +421,7 @@ class OpenAIAgent:
                 model=self.model,
                 messages=messages,
                 tools=tools,
-                tool_choice="auto" if tools else None,
-                file_ids=file_ids
+                tool_choice="auto" if tools else None
             )
 
         # Extract the response text
@@ -493,18 +488,16 @@ class OpenAIAgent:
             
             # Get a new response that uses the tool call results
             if self.is_async:
-                # Asynchronous call with file_ids for RAG
+                # Asynchronous call
                 response = await self.client.chat.completions.create(
                     model=self.model,
-                    messages=self.messages,
-                    file_ids=file_ids
+                    messages=self.messages
                 )
             else:
-                # Synchronous call with file_ids for RAG
+                # Synchronous call
                 response = self.client.chat.completions.create(
                     model=self.model,
-                    messages=self.messages,
-                    file_ids=file_ids
+                    messages=self.messages
                 )
             
             # Update the response message
