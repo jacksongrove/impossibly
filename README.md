@@ -8,25 +8,25 @@ This library is designed to be used as a backend for AI apps and automations, pr
 
 Install the base package:
 ```bash
-pip install imengine
+pip install imagination-engine
 ```
 
 Or install with specific integrations:
 ```bash
 # Minimal installations with specific providers
-pip install "imengine[openai]"    # Only OpenAI support
-pip install "imengine[anthropic]" # Only Anthropic support
-pip install "imengine[all]"       # All LLM integrations
+pip install "imagination-engine[openai]"    # Only OpenAI support
+pip install "imagination-engine[anthropic]" # Only Anthropic support
+pip install "imagination-engine[all]"       # All LLM integrations
 
 # For testing and development
-pip install "imengine[test]"      # All LLM integrations + testing tools
-pip install "imengine[dev]"       # All LLM integrations + testing + dev tools
+pip install "imagination-engine[test]"      # All LLM integrations + testing tools
+pip install "imagination-engine[dev]"       # All LLM integrations + testing + dev tools
 ```
 
 ## Imports
 Import the components you need:
 ```python
-from imengine import Agent, Graph, START, END
+from imagination_engine import Agent, Graph, START, END
 ```
 
 ## Setting Up Environment Variables
@@ -97,16 +97,16 @@ Then run the tests using the CLI command that gets installed with the package:
 
 ```bash
 # Run all tests
-imengine-test run
+imagination-engine run
 
 # Run just feature tests
-imengine-test run --path features/
+imagination-engine run --path features/
 
 # Run tests in Docker
-imengine-test run --docker
+imagination-engine run --docker
 
 # Get help
-imengine-test run --help
+imagination-engine run --help
 ```
 
 See [tests/README.md](tests/README.md) for more details on the testing framework and available options.
@@ -157,7 +157,7 @@ pip install -e .
 If you want to test the exact distribution that would be uploaded to PyPI:
 
 ```bash
-pip install dist/imengine-0.1.0-py3-none-any.whl
+pip install dist/imagination-engine-0.1.0-py3-none-any.whl
 ```
 
 ### Running Examples

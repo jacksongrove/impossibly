@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from imengine import Agent, Graph, START, END
+from imagination_engine import Agent, Graph, START, END
 
 def __main__():
     # Load environment variables from .env file

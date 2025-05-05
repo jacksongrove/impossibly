@@ -91,7 +91,7 @@ def run_tests_locally(
         cmd.append(f"-k {filter}")
     
     if cov:
-        cmd.append("--cov=imengine")
+        cmd.append("--cov=imagination_engine")
         cmd.append("--cov-report=term")
     
     if collect_only:

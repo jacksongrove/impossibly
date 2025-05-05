@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "imengine"
+name = "imagination-engine"
 version = "0.1.0"
 description = "An agentic architecture for idea generation & critical thinking"
 readme = "README.md"
@@ -57,7 +57,7 @@ dev = [
 ]
 
 [project.scripts]
-imengine-test = "imengine.cli.test_commands:tests"
+imagination-engine = "imagination_engine.cli.test_commands:tests"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
