@@ -1,0 +1,308 @@
+{% extends "!layout.html" %}
+
+{% block extrahead %}
+{{ super() }}
+<style>
+    /* Brand-compliant styles for Imagination Engine documentation */
+    
+    /* Logo and navigation styling */
+    .wy-side-nav-search > a {
+        color: #FFFFFF;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-weight: 700;
+        font-size: 18px;
+        letter-spacing: -0.025em;
+        transition: all 120ms cubic-bezier(0.35, 0.85, 0.4, 1);
+        text-align: left !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        padding: 0 !important;
+        width: calc(100% - 20px) !important;
+        justify-content: flex-start !important;
+        margin-left: 10px !important;
+        overflow: hidden !important;
+    }
+    
+    .wy-side-nav-search > a:hover {
+        background: rgba(30, 110, 255, 0.1);
+        color: #FFFFFF;
+        transform: none;
+    }
+    
+    /* Enhanced focus states for accessibility */
+    .wy-side-nav-search > a:focus {
+        outline: 2px solid #FF7A21;
+        outline-offset: 2px;
+    }
+    
+    /* Current navigation item styling */
+    .wy-menu-vertical li.current > a {
+        border-left: 3px solid #1E6EFF;
+        background: transparent;
+        color: #1E6EFF;
+        font-weight: 500;
+    }
+    
+    /* Active section highlighting */
+    .wy-menu-vertical li.current {
+        background-color: transparent;
+    }
+    
+    /* Logo styling */
+    .wy-side-nav-search .icon img {
+        transition: all 120ms cubic-bezier(0.35, 0.85, 0.4, 1);
+    }
+    
+    .wy-side-nav-search .icon img:hover {
+        transform: scale(1.05);
+    }
+    
+    /* Version info styling */
+    .wy-side-nav-search .version {
+        color: #E1E4E8;
+        font-size: 12px;
+        font-weight: 400;
+    }
+    
+    /* Navigation submenu styling */
+    .wy-menu-vertical ul {
+        padding-left: 16px;
+    }
+    
+    .wy-menu-vertical ul li a {
+        color: #F0F2F5;
+        padding: 4px 16px;
+        font-size: 14px;
+    }
+    
+    .wy-menu-vertical ul li a:hover {
+        color: #1E6EFF;
+        background: rgba(30, 110, 255, 0.08);
+    }
+    
+    /* Mobile menu button */
+    .wy-nav-top i {
+        color: #FFFFFF;
+    }
+    
+    /* Ensure proper text contrast in dark navigation */
+    .wy-side-nav-search, .wy-nav-side {
+        background: #001E40;
+    }
+    
+    /* Content area enhancements */
+    .rst-content .toctree-wrapper > p.caption {
+        color: #001E40;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 16px;
+    }
+    
+    /* Clean separator lines */
+    .rst-content hr {
+        border: none;
+        height: 1px;
+        background: #E1E4E8;
+        margin: 32px 0;
+    }
+    
+    /* Enhanced search styling */
+    .wy-side-nav-search input[type="text"] {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #FFFFFF;
+        color: #3A3F44;
+        border: 1px solid #E1E4E8;
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-size: 14px;
+        transition: all 120ms cubic-bezier(0.35, 0.85, 0.4, 1);
+    }
+    
+    .wy-side-nav-search input[type="text"]:focus {
+        border-color: #1E6EFF;
+        outline: 2px solid #FF7A21;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 3px rgba(30, 110, 255, 0.1);
+    }
+    
+    /* Breadcrumb navigation */
+    .wy-breadcrumbs li {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 14px;
+    }
+    
+    .wy-breadcrumbs li a {
+        color: #1E6EFF;
+    }
+    
+    .wy-breadcrumbs li a:hover {
+        color: #001E40;
+    }
+    
+    /* Enhanced button styling for mobile menu */
+    .wy-nav-top a {
+        color: #FFFFFF;
+        background: transparent;
+    }
+    
+    .wy-nav-top a:hover {
+        background: rgba(30, 110, 255, 0.1);
+    }
+    
+    /* Force logo visibility */
+    .wy-side-nav-search > a img {
+        max-height: 120px !important;
+        min-height: 80px !important;
+        width: 220px !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        margin: 0 !important;
+        margin-left: 0 !important;
+        object-fit: contain !important;
+        object-position: left !important;
+        max-width: 100% !important;
+    }
+    
+    /* Improve sidebar dropdown contrast */
+    .wy-menu-vertical li.toctree-l1.current > a {
+        color: #FFFFFF;
+        font-weight: 600;
+        background: transparent;
+    }
+    
+    .wy-menu-vertical li.toctree-l2.current > a,
+    .wy-menu-vertical li.toctree-l3.current > a,
+    .wy-menu-vertical li.toctree-l4.current > a {
+        background: transparent;
+    }
+    
+    .wy-menu-vertical a {
+        color: #F0F2F5;
+    }
+    
+    .wy-menu-vertical p.caption {
+        color: #1E6EFF;
+        font-weight: 600;
+    }
+    
+    /* Ensure dropdown menus have better contrast */
+    .wy-menu-vertical li.current a {
+        color: #F0F2F5;
+        background: transparent;
+    }
+    
+    .wy-menu-vertical li.current li.toctree-l2 a,
+    .wy-menu-vertical li.current li.toctree-l3 a {
+        color: #F0F2F5;
+        background: transparent;
+    }
+    
+    .wy-menu-vertical li.current li.toctree-l2 a:hover,
+    .wy-menu-vertical li.current li.toctree-l3 a:hover {
+        color: #FFFFFF;
+        background: rgba(30, 110, 255, 0.15);
+    }
+    
+    /* Reduce vertical padding around the search box */
+    .wy-side-nav-search {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    
+    /* Ensure sidebar width is respected */
+    .wy-nav-side {
+        width: 280px !important;
+        overflow: hidden !important;
+    }
+</style>
+<script>
+    // Ensure logo is visible after page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Force logo visibility with JavaScript
+        function makeLogoVisible() {
+            var logoImg = document.querySelector('.wy-side-nav-search > a img');
+            if (logoImg) {
+                logoImg.style.display = 'block';
+                logoImg.style.visibility = 'visible';
+                logoImg.style.opacity = '1';
+                logoImg.style.maxHeight = '120px';
+                logoImg.style.minHeight = '80px';
+                logoImg.style.width = '220px';
+                logoImg.style.margin = '0';
+                logoImg.style.marginLeft = '0';
+                logoImg.style.objectFit = 'contain';
+                logoImg.style.objectPosition = 'left';
+                logoImg.style.maxWidth = '100%';
+                
+                // Ensure parent is flex for alignment
+                var logoParent = document.querySelector('.wy-side-nav-search > a');
+                if (logoParent) {
+                    logoParent.style.display = 'flex';
+                    logoParent.style.alignItems = 'flex-start';
+                    logoParent.style.justifyContent = 'flex-start';
+                    logoParent.style.textAlign = 'left';
+                    logoParent.style.padding = '0';
+                    logoParent.style.width = 'calc(100% - 20px)';
+                    logoParent.style.marginLeft = '10px';
+                    logoParent.style.overflow = 'hidden';
+                }
+                
+                // Reduce padding on search container
+                var searchContainer = document.querySelector('.wy-side-nav-search');
+                if (searchContainer) {
+                    searchContainer.style.paddingTop = '0';
+                    searchContainer.style.paddingBottom = '0';
+                }
+                
+                // Ensure sidebar width is respected
+                var sidebar = document.querySelector('.wy-nav-side');
+                if (sidebar) {
+                    sidebar.style.width = '280px';
+                    sidebar.style.overflow = 'hidden';
+                }
+            }
+        }
+        
+        // Run right away
+        makeLogoVisible();
+        
+        // Run again after a small delay
+        setTimeout(makeLogoVisible, 200);
+        
+        // And once more for good measure
+        setTimeout(makeLogoVisible, 500);
+        
+        // Try a few more times with increasing delays
+        setTimeout(makeLogoVisible, 1000);
+        setTimeout(makeLogoVisible, 2000);
+        
+        // Also run on any DOM changes that might affect the logo
+        var observer = new MutationObserver(makeLogoVisible);
+        observer.observe(document.body, { childList: true, subtree: true });
+        
+        // Also attach to window load event
+        window.addEventListener('load', makeLogoVisible);
+    });
+</script>
+{% endblock %}
+
+{% block sidebartitle %}
+    <a href="{{ pathto(master_doc) }}" style="display: flex !important; align-items: flex-start !important; justify-content: flex-start !important; text-align: left !important; padding: 0 !important; width: calc(100% - 20px) !important; margin-left: 10px !important; overflow: hidden !important;">
+        <img src="{{ pathto('_static/img/full_logo.svg', 1) }}" class="logo" alt="{{ project }}" 
+            style="display: block !important; 
+                  visibility: visible !important; 
+                  opacity: 1 !important; 
+                  max-height: 120px !important;
+                  min-height: 80px !important;
+                  width: 220px !important;
+                  margin: 0 !important;
+                  margin-left: 0 !important;
+                  object-fit: contain !important;
+                  object-position: left !important;
+                  max-width: 100% !important;" />
+    </a>
+{% endblock %} 
