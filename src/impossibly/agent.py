@@ -8,9 +8,9 @@ from typing import Union, List
 from openai import AsyncOpenAI, OpenAI
 from openai import File
 from anthropic import AsyncAnthropic, Anthropic
-from imagination_engine.utils.start_end import END
-from imagination_engine.utils.memory import Memory
-from imagination_engine.utils.tools import Tool, format_tools_for_api
+from impossibly.utils.start_end import END
+from impossibly.utils.memory import Memory
+from impossibly.utils.tools import Tool, format_tools_for_api
 
 #TODO: Add shared memory to agent (list of agents to read memory from)
 #TODO: Add tool use

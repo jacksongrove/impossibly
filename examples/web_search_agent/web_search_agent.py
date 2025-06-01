@@ -5,7 +5,7 @@ This agent can perform web searches and provide information based on the search 
 
 import os
 from dotenv import load_dotenv
-from imagination_engine import Agent, Graph, Tool, START, END
+from impossibly import Agent, Graph, Tool, START, END
 
 def perform_web_search(query, max_results=5):
     """

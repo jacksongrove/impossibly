@@ -12,12 +12,12 @@ from pathlib import Path
 
 # Add the src directory to the path to import the library
 BASE_DIR = Path(__file__).resolve().parent.parent
-SRC_DIR = BASE_DIR / 'imagination-engine' / 'src'
+SRC_DIR = BASE_DIR / 'impossibly' / 'src'
 sys.path.insert(0, str(SRC_DIR))
 
 # Import the utility functions
 from tests.utils.client_mocks import create_mock_anthropic, create_mock_openai
-from imagination_engine import Tool
+from impossibly import Tool
 
 
 @pytest.fixture

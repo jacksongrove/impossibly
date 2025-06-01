@@ -1,6 +1,6 @@
-# Imagination Engine Tests
+# Impossibly Tests
 
-This directory contains various tests for the Imagination Engine library, organized by test purpose.
+This directory contains various tests for the Impossibly library, organized by test purpose.
 
 ## Test Structure
 
@@ -45,16 +45,16 @@ Then run the tests using the CLI command that gets installed with the package:
 
 ```bash
 # Run all tests
-imagination-engine run
+impossibly run
 
 # Run just feature tests
-imagination-engine run --path features/
+impossibly run --path features/
 
 # Run tests in Docker
-imagination-engine run --docker
+impossibly run --docker
 
 # Get help
-imagination-engine run --help
+impossibly run --help
 ```
 
 ## CLI Options
@@ -63,39 +63,39 @@ imagination-engine run --help
 
 ```bash
 # Run tests with verbose output
-imagination-engine run
+impossibly run
 
 # Run tests without verbose output
-imagination-engine run --no-verbose
+impossibly run --no-verbose
 
 # Run tests with code coverage report
-imagination-engine run --cov
+impossibly run --cov
 
 # Run tests for a specific test path (relative to tests directory)
-imagination-engine run --path features/test_agent_interaction.py
+impossibly run --path features/test_agent_interaction.py
 
 # Run tests matching a specific pattern
-imagination-engine run --filter test_conversation
+impossibly run --filter test_conversation
 
 # Just collect tests without running them
-imagination-engine run --collect-only
+impossibly run --collect-only
 ```
 
 ### Cleaning Options
 
 ```bash
 # Clean up pytest cache and temporary files before running tests
-imagination-engine run --clean
+impossibly run --clean
 ```
 
 ### Docker Options
 
 ```bash
 # Run tests in Docker
-imagination-engine run --docker
+impossibly run --docker
 
 # Run tests in Docker and clean up Docker containers and images afterward
-imagination-engine run --docker --clean-docker
+impossibly run --docker --clean-docker
 ```
 
 ## Test Configuration

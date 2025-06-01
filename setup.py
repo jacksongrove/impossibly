@@ -41,7 +41,7 @@ dev_requires = test_requires + [
 ]
 
 setup(
-    name="imagination-engine",
+    name="impossibly",
     version="0.1.2",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
@@ -62,7 +62,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "imagination-engine=imagination_engine.cli.test_commands:tests",
+            "impossibly=impossibly.cli.test_commands:tests",
         ],
     },
     description="An agentic architecture for idea generation & critical thinking",
@@ -85,8 +85,8 @@ setup(
     keywords="ai, agents, llm, orchestration, tools, agentic, architecture",
     python_requires=">=3.9",
     project_urls={
-        "Homepage": "https://github.com/jacksongrove/imagination-engine",
-        "Bug Reports": "https://github.com/jacksongrove/imagination-engine/issues",
-        "Documentation": "https://github.com/jacksongrove/imagination-engine/blob/main/README.md",
+        "Homepage": "https://github.com/jacksongrove/impossibly",
+        "Bug Reports": "https://github.com/jacksongrove/impossibly/issues",
+        "Documentation": "https://github.com/jacksongrove/impossibly/blob/main/README.md",
     },
 ) 

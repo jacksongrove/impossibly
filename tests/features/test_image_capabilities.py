@@ -11,7 +11,7 @@ import pytest
 from unittest.mock import patch, mock_open, MagicMock
 
 # Import the necessary components
-from imagination_engine import Agent, Graph, START, END
+from impossibly import Agent, Graph, START, END
 
 
 @pytest.mark.image
@@ -43,7 +43,7 @@ class TestImageCapabilities:
         )
         
         # Mock the _encode_image method to return our base64 encoded test image
-        with patch("imagination_engine.agent.OpenAIAgent._encode_image", return_value=image_base64):
+        with patch("impossibly.agent.OpenAIAgent._encode_image", return_value=image_base64):
             # Test invoking the agent with an image
             response = agent.invoke("user", "What do you see in this image?", files=[image_path])
             
@@ -67,7 +67,7 @@ class TestImageCapabilities:
         )
         
         # Mock the _encode_image method to return our base64 encoded test image
-        with patch("imagination_engine.agent.OpenAIAgent._encode_image", return_value=image_base64) as mock_encode:
+        with patch("impossibly.agent.OpenAIAgent._encode_image", return_value=image_base64) as mock_encode:
             # Mock the OpenAI client's chat.completions.create method
             with patch.object(mock_openai_client, "chat") as mock_chat:
                 # Set up the mock to return a predefined response
@@ -130,7 +130,7 @@ class TestImageCapabilities:
         )
         
         # Mock the _encode_image method to return our base64 encoded test image
-        with patch("imagination_engine.agent.OpenAIAgent._encode_image", return_value=image_base64):
+        with patch("impossibly.agent.OpenAIAgent._encode_image", return_value=image_base64):
             # Test invoking the agent with multiple images
             response = agent.invoke("user", "Compare these two images", files=[image_path1, image_path2])
             
@@ -173,7 +173,7 @@ class TestImageCapabilities:
         graph.add_edge(processor_agent, END)
         
         # Mock the _encode_image method to return our base64 encoded test image
-        with patch("imagination_engine.agent.OpenAIAgent._encode_image", return_value=image_base64):
+        with patch("impossibly.agent.OpenAIAgent._encode_image", return_value=image_base64):
             # Mock the vision agent's response
             with patch.object(vision_agent.client, "invoke", return_value="I see a cat in the image. \\ProcessorAgent\\"):
                 # Mock the processor agent's response

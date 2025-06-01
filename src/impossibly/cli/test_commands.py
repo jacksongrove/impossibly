@@ -1,5 +1,5 @@
 """
-Command-line interface for running tests for the Imagination Engine.
+Command-line interface for running tests for Impossibly.
 """
 import os
 import subprocess
@@ -11,7 +11,7 @@ import click
 
 @click.group()
 def tests():
-    """Run tests for Imagination Engine."""
+    """Run tests for Impossibly."""
     pass
 
 
@@ -32,7 +32,7 @@ def tests():
 def run(
     ctx, path, filter, no_verbose, cov, collect_only, docker, clean, clean_docker
 ):
-    """Run tests for Imagination Engine."""
+    """Run tests for Impossibly."""
     # Find the project root
     project_root = find_project_root()
     
@@ -91,7 +91,7 @@ def run_tests_locally(
         cmd.append(f"-k {filter}")
     
     if cov:
-        cmd.append("--cov=imagination_engine")
+        cmd.append("--cov=impossibly")
         cmd.append("--cov-report=term")
     
     if collect_only:
@@ -134,7 +134,7 @@ def run_tests_in_docker(project_root, path, filter, no_verbose, clean, clean_doc
     if clean_docker:
         click.echo("Cleaning up Docker test resources...")
         subprocess.run([*cmd, "down"], check=False)
-        subprocess.run(["docker", "rmi", "-f", "imagination-engine-v2-test"], check=False, stderr=subprocess.PIPE)
+        subprocess.run(["docker", "rmi", "-f", "impossibly-v2-test"], check=False, stderr=subprocess.PIPE)
         click.echo("Docker cleanup complete!")
     
     # Clean files if requested

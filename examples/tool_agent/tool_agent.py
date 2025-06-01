@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
-from imagination_engine import Agent, Graph, START, END, Tool
+from impossibly import Agent, Graph, START, END, Tool
 
 # Define our tools
 def calculate_sum(a, b):

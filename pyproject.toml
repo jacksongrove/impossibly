@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "imagination-engine"
+name = "impossibly"
 version = "0.1.2"
 description = "An agentic architecture for idea generation & critical thinking"
 readme = "README.md"
@@ -59,7 +59,7 @@ dev = [
 ]
 
 [project.scripts]
-imagination-engine = "imagination_engine.cli.test_commands:tests"
+impossibly = "impossibly.cli.test_commands:tests"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

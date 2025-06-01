@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from imagination_engine import Agent, Graph, START, END
+from impossibly import Agent, Graph, START, END
 
 # Define the path to the image file
 IMAGE_PATH = Path(__file__).parent / "image_input.jpeg"

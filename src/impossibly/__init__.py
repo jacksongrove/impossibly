@@ -1,13 +1,13 @@
 # This file can be empty or used for package-level initialization. 
 
 """
-Imagination Engine - Modular, extensible agent framework for building multi-agent systems.
+Impossibly - Modular, extensible agent framework for building multi-agent systems.
 
-Key components can be imported directly from imagination_engine:
-    from imagination_engine import Agent, Graph
+Key components can be imported directly from impossibly:
+    from impossibly import Agent, Graph
     # or
-    import imagination_engine
-    agent = imagination_engine.Agent(...)
+    import impossibly
+    agent = impossibly.Agent(...)
 """
 
 # Core components

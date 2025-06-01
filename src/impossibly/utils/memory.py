@@ -6,10 +6,10 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, List
 
-from imagination_engine.utils.start_end import END
+from impossibly.utils.start_end import END
 
 if TYPE_CHECKING:
-    from imagination_engine import Agent  # Import only for type checking
+    from impossibly import Agent  # Import only for type checking
 
 
 class Memory:

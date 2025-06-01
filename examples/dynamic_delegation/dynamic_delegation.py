@@ -8,7 +8,7 @@ decision-making and hierarchical collaboration.
 
 import os
 from dotenv import load_dotenv
-from imagination_engine import Agent, Graph, Tool, START, END
+from impossibly import Agent, Graph, Tool, START, END
 
 # Define our recursive graph creation tool
 def create_expert_team(query, required_experts, team_task):

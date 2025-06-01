@@ -1,5 +1,5 @@
-# Imagination Engine
-Imagination Engine is an agentic orchestration framework for rapidly building agentic architectures in Python. It accelerates agentic development, empowering developers to craft architectures that enable LLMs to excel in higher-order tasks like idea generation and critical thinking.
+# Impossibly
+Impossibly is an agentic orchestration framework for rapidly building agentic architectures in Python. It accelerates agentic development, empowering developers to craft architectures that enable LLMs to excel in higher-order tasks like idea generation and critical thinking.
 
 This library is designed to be used as a backend for AI apps and automations, providing support for all major LLM providers and locally-hosted model endpoints.
 
@@ -8,25 +8,25 @@ This library is designed to be used as a backend for AI apps and automations, pr
 
 Install the base package:
 ```bash
-pip install imagination-engine
+pip install impossibly
 ```
 
 Or install with specific integrations:
 ```bash
 # Minimal installations with specific providers
-pip install "imagination-engine[openai]"    # Only OpenAI support
-pip install "imagination-engine[anthropic]" # Only Anthropic support
-pip install "imagination-engine[all]"       # All LLM integrations
+pip install "impossibly[openai]"    # Only OpenAI support
+pip install "impossibly[anthropic]" # Only Anthropic support
+pip install "impossibly[all]"       # All LLM integrations
 
 # For testing and development
-pip install "imagination-engine[test]"      # All LLM integrations + testing tools
-pip install "imagination-engine[dev]"       # All LLM integrations + testing + dev tools
+pip install "impossibly[test]"      # All LLM integrations + testing tools
+pip install "impossibly[dev]"       # All LLM integrations + testing + dev tools
 ```
 
 ## Imports
 Import the components you need:
 ```python
-from imagination_engine import Agent, Graph, START, END
+from impossibly import Agent, Graph, START, END
 ```
 
 ## Setting Up Environment Variables
@@ -97,16 +97,16 @@ Then run the tests using the CLI command that gets installed with the package:
 
 ```bash
 # Run all tests
-imagination-engine run
+impossibly run
 
 # Run just feature tests
-imagination-engine run --path features/
+impossibly run --path features/
 
 # Run tests in Docker
-imagination-engine run --docker
+impossibly run --docker
 
 # Get help
-imagination-engine run --help
+impossibly run --help
 ```
 
 See [tests/README.md](tests/README.md) for more details on the testing framework and available options.
@@ -119,8 +119,8 @@ If you want to develop locally and test the examples, follow these steps:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/jacksongrove/imagination-engine.git
-   cd imagination-engine
+   git clone https://github.com/jacksongrove/impossibly.git
+   cd impossibly
    ```
 
 2. Create and activate a virtual environment (optional but recommended):
@@ -157,7 +157,7 @@ pip install -e .
 If you want to test the exact distribution that would be uploaded to PyPI:
 
 ```bash
-pip install dist/imagination-engine-0.1.0-py3-none-any.whl
+pip install dist/impossibly-0.1.0-py3-none-any.whl
 ```
 
 ### Running Examples

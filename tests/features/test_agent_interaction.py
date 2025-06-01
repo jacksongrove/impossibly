@@ -11,7 +11,7 @@ import pytest
 from unittest.mock import patch
 
 # Import the necessary components
-from imagination_engine import Agent, Graph, START, END
+from impossibly import Agent, Graph, START, END
 
 
 @pytest.mark.agent_memory

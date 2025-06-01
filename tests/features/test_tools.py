@@ -11,8 +11,8 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 # Import the necessary components
-from imagination_engine import Agent, Tool, START, END
-from imagination_engine.utils.tools import format_tools_for_api
+from impossibly import Agent, Tool, START, END
+from impossibly.utils.tools import format_tools_for_api
 
 
 @pytest.mark.tools

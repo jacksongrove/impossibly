@@ -6,7 +6,7 @@ that require web searches, using the Tavily API for real-time information.
 
 import os
 from dotenv import load_dotenv
-from imagination_engine import Agent, Graph, Tool, START, END
+from impossibly import Agent, Graph, Tool, START, END
 
 def perform_web_search(query, max_results=5):
     """

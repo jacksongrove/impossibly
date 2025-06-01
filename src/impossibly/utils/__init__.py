@@ -1,9 +1,9 @@
 # This file can be empty or used for package-level initialization. 
 
 """
-Imagination Engine utility modules.
+Impossibly utility modules.
 
-These utilities provide support functionality for the core Imagination Engine components.
+These utilities provide support functionality for the core Impossibly components.
 """
 
 # Core utilities

@@ -10,9 +10,9 @@ import re
 import asyncio
 import os
 from typing import Union, List, Tuple
-from imagination_engine.agent import *
-from imagination_engine.utils.start_end import START, END
-from imagination_engine.utils.memory import Memory
+from impossibly.agent import *
+from impossibly.utils.start_end import START, END
+from impossibly.utils.memory import Memory
 
 class Graph:
     '''
