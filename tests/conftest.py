@@ -4,16 +4,8 @@ Shared fixtures for all test modules.
 This file contains fixtures that can be used across all test modules,
 reducing duplication and ensuring consistent test setup.
 """
-import os
-import sys
 import pytest
 from unittest.mock import MagicMock, patch
-from pathlib import Path
-
-# Add the src directory to the path to import the library
-BASE_DIR = Path(__file__).resolve().parent.parent
-SRC_DIR = BASE_DIR / 'src'
-sys.path.insert(0, str(SRC_DIR))
 
 # Import the utility functions
 from .utils.client_mocks import create_mock_anthropic, create_mock_openai
