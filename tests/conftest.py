@@ -12,7 +12,7 @@ from pathlib import Path
 
 # Add the src directory to the path to import the library
 BASE_DIR = Path(__file__).resolve().parent.parent
-SRC_DIR = BASE_DIR / 'impossibly' / 'src'
+SRC_DIR = BASE_DIR / 'src'
 sys.path.insert(0, str(SRC_DIR))
 
 # Import the utility functions
