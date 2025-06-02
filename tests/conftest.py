@@ -16,7 +16,7 @@ SRC_DIR = BASE_DIR / 'impossibly' / 'src'
 sys.path.insert(0, str(SRC_DIR))
 
 # Import the utility functions
-from tests.utils.client_mocks import create_mock_anthropic, create_mock_openai
+from .utils.client_mocks import create_mock_anthropic, create_mock_openai
 from impossibly import Tool
 
 
