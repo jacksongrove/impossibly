@@ -8,7 +8,6 @@
 # add these directories to sys.path here.
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -52,6 +51,10 @@ autodoc_default_options = {
     'undoc-members': True,
     'exclude-members': '__weakref__'
 }
+
+# Don't fail on missing references
+nitpicky = False
+autodoc_inherit_docstrings = True
 
 # Intersphinx mapping
 intersphinx_mapping = {
