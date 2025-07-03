@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath('../../src'))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Imagination Engine'
+project = 'Impossibly'
 copyright = '2025, Jackson Grove'
 author = 'Jackson Grove'
 release = '0.1.2'
@@ -71,7 +71,7 @@ html_static_path = ['_static']
 
 # Logo and favicon configuration
 html_logo = '_static/img/full_logo.svg'  # Use the full logo with icon and wordmark
-html_favicon = '_static/favicon.svg'
+html_favicon = '_static/favicon.ico'
 
 # Custom CSS
 html_css_files = [

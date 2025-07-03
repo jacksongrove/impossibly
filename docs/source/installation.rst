@@ -1,16 +1,16 @@
 Installation
 ============
 
-You can install Imagination Engine using pip:
+You can install Impossibly using pip:
 
 .. code-block:: bash
 
-    pip install imagination-engine
+    pip install impossibly
 
 Requirements
------------
+------------
 
-Imagination Engine requires Python 3.9 or later.
+Impossibly requires Python 3.9 or later.
 
 Core dependencies:
 - ``openai>=1.0.0``: For OpenAI LLMs
@@ -19,20 +19,20 @@ Core dependencies:
 - ``click>=8.0.0``: For CLI commands
 
 Installing from source
----------------------
+----------------------
 
 You can also install the package directly from the source code:
 
 .. code-block:: bash
 
-    git clone https://github.com/jacksongrove/imagination-engine.git
-    cd imagination-engine
+    git clone https://github.com/jacksongrove/impossibly.git
+    cd impossibly
     pip install -e .
 
 Development installation
------------------------
+------------------------
 
-If you're planning to develop or contribute to Imagination Engine, install the development dependencies:
+If you're planning to develop or contribute to Impossibly, install the development dependencies:
 
 .. code-block:: bash
 
