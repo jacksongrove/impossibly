@@ -143,9 +143,6 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
-/site
-
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -185,3 +182,7 @@ cython_debug/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Documentation builds
+docs/build/
+*/.vercel

@@ -1,10 +1,10 @@
 Quickstart
 ==========
 
-This guide will help you get started with Imagination Engine. It covers the basic concepts and provides examples of how to create agents and connect them in graphs.
+This guide will help you get started with Impossibly. It covers the basic concepts and provides examples of how to create agents and connect them in graphs.
 
 Basic Usage
-----------
+-----------
 
 Let's start with a simple example of creating an agent and using it:
 
@@ -12,7 +12,7 @@ Let's start with a simple example of creating an agent and using it:
 
     import os
     from openai import OpenAI
-    from imagination_engine import Agent
+    from impossibly import Agent
 
     # Initialize an OpenAI client
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -30,15 +30,15 @@ Let's start with a simple example of creating an agent and using it:
     print(response)
 
 Creating a Graph of Agents
--------------------------
+--------------------------
 
-The real power of Imagination Engine comes from connecting multiple agents in a graph:
+The real power of Impossibly comes from connecting multiple agents in a graph:
 
 .. code-block:: python
 
     from openai import OpenAI
-    from imagination_engine import Agent, Graph
-    from imagination_engine.utils.start_end import START, END
+    from impossibly import Agent, Graph
+    from impossibly.utils.start_end import START, END
 
     # Initialize OpenAI client
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -72,14 +72,14 @@ The real power of Imagination Engine comes from connecting multiple agents in a 
     print(result)
 
 Using Tools with Agents
-----------------------
+-----------------------
 
 You can enhance agents with tools to interact with external systems:
 
 .. code-block:: python
 
-    from imagination_engine import Agent
-    from imagination_engine.utils.tools import Tool
+    from impossibly import Agent
+    from impossibly.utils.tools import Tool
     from openai import OpenAI
     import requests
 
@@ -126,7 +126,7 @@ You can enhance agents with tools to interact with external systems:
     print(response)
 
 Next Steps
----------
+----------
 
 Now that you've seen the basics, check out the following guides:
 

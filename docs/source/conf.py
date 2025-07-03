@@ -8,12 +8,11 @@
 # add these directories to sys.path here.
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Imagination Engine'
+project = 'Impossibly'
 copyright = '2025, Jackson Grove'
 author = 'Jackson Grove'
 release = '0.1.2'
@@ -53,6 +52,10 @@ autodoc_default_options = {
     'exclude-members': '__weakref__'
 }
 
+# Don't fail on missing references
+nitpicky = False
+autodoc_inherit_docstrings = True
+
 # Intersphinx mapping
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
@@ -71,7 +74,7 @@ html_static_path = ['_static']
 
 # Logo and favicon configuration
 html_logo = '_static/img/full_logo.svg'  # Use the full logo with icon and wordmark
-html_favicon = '_static/favicon.svg'
+html_favicon = '_static/favicon.ico'
 
 # Custom CSS
 html_css_files = [

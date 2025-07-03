@@ -1,12 +1,12 @@
 Utility APIs
-===========
+============
 
-This section documents the utility modules that support agents and graphs in Imagination Engine.
+This section documents the utility modules that support agents and graphs in Impossibly.
 
 Tools
 -----
 
-.. automodule:: imagination_engine.utils.tools
+.. automodule:: impossibly.utils.tools
    :members:
    :inherited-members:
    :special-members: __init__
@@ -14,14 +14,14 @@ Tools
 Memory
 ------
 
-.. automodule:: imagination_engine.utils.memory
+.. automodule:: impossibly.utils.memory
    :members:
    :inherited-members:
    :special-members: __init__
 
 Start/End Nodes
---------------
+---------------
 
-.. automodule:: imagination_engine.utils.start_end
+.. automodule:: impossibly.utils.start_end
    :members:
    :inherited-members: 

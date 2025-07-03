@@ -1,15 +1,15 @@
-.. Imagination Engine documentation master file, created by
+.. Impossibly documentation master file, created by
    sphinx-quickstart on Mon May 12 10:55:03 2025.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Imagination Engine
-=================
+Impossibly
+==========
 
 Prototype powerful agentic architectures *impossibly fast*
---------------------------------------------------------------
+----------------------------------------------------------
 
-**Imagination Engine** is a Python framework that empowers you to build, deploy, and orchestrate AI agents in sophisticated graph structures with unprecedented speed and flexibility.
+**Impossibly** is a Python framework that empowers you to build, deploy, and orchestrate AI agents in sophisticated graph structures with unprecedented speed and flexibility.
 
 Key capabilities:
 
@@ -21,11 +21,11 @@ Key capabilities:
 * **Production-ready performance** - Built for both synchronous and asynchronous operations at scale
 
 Getting Started
---------------
+---------------
 
 .. code-block:: bash
 
-   pip install imagination-engine
+   pip install impossibly
 
 For a quick implementation guide, see the :doc:`quickstart`.
 
@@ -64,7 +64,7 @@ For a quick implementation guide, see the :doc:`quickstart`.
    changelog
 
 Indices and tables
-=================
+==================
 
 * :ref:`genindex`
 * :ref:`modindex`
