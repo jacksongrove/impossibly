@@ -1,0 +1,102 @@
+name: Deploy Documentation to Production
+
+on:
+  # Only manual trigger - no automatic triggers
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+
+jobs:
+  check-unauthorized:
+    runs-on: ubuntu-latest
+    if: github.actor != 'jacksongrove'
+    steps:
+      - name: Unauthorized deployment attempt
+        run: |
+          echo "❌ UNAUTHORIZED: Only the repository owner can deploy to production"
+          echo "👤 User: ${{ github.actor }}"
+          echo "📋 Branch: ${{ github.ref }}"
+          echo ""
+          echo "💡 If you're contributing to this project:"
+          echo "   - Submit a pull request instead"
+          echo "   - Documentation validation happens automatically on PRs"
+          echo "   - Production deployments are restricted to the maintainer"
+          exit 1
+
+  deploy-to-production:
+    runs-on: ubuntu-latest
+    environment: production
+    # Only allow deployment from main branch by repo owner
+    if: github.ref == 'refs/heads/main' && github.actor == 'jacksongrove'
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - name: Check authorization
+        run: |
+          echo "🔒 Production deployment authorized for: ${{ github.actor }}"
+          echo "📋 Branch: ${{ github.ref }}"
+          echo "🎯 Environment: ${{ github.event.inputs.environment }}"
+          echo "🚀 Deploying to: impossibly.dev/docs"
+          
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install sphinx sphinx_copybutton sphinx_rtd_theme impossibly
+          
+      - name: Build documentation
+        run: |
+          export LC_ALL=C.UTF-8
+          export LANG=C.UTF-8
+          python -m sphinx -b html source build/html
+          
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+        
+      - name: Deploy to Vercel
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+            vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
+          else
+            vercel --token=${{ secrets.VERCEL_TOKEN }} --yes
+          fi
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          
+      - name: Production Deployment Summary
+        run: |
+          echo "🚀 PRODUCTION Deployment completed successfully!"
+          echo ""
+          echo "📊 Deployment Details:"
+          echo "  • Environment: ${{ github.event.inputs.environment }}"
+          echo "  • Branch: ${{ github.ref }}"
+          echo "  • Deployed by: ${{ github.actor }}"
+          echo "  • Timestamp: $(date)"
+          echo ""
+          echo "🌍 Live URLs:"
+          echo "  • Production: https://impossibly.dev/docs"
+          echo "  • Direct Vercel: Check Vercel dashboard"
+          echo ""
+          echo "📋 Workflow Summary:"
+          echo "  • VALIDATION: Runs on all PRs and merges (free)"
+          echo "  • PRODUCTION: Manual deployment only (this workflow)"
+          echo ""
+          echo "⚙️  Next Steps:"
+          echo "  • Verify deployment at https://impossibly.dev/docs"
+          echo "  • Update main site routing if needed" 

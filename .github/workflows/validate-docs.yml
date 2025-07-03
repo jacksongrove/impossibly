@@ -1,0 +1,68 @@
+name: Validate Documentation Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - '.github/workflows/validate-docs.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - '.github/workflows/validate-docs.yml'
+  # Allow manual trigger for testing
+  workflow_dispatch:
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install sphinx sphinx_copybutton sphinx_rtd_theme impossibly
+          
+      - name: Build documentation
+        run: |
+          export LC_ALL=C.UTF-8
+          export LANG=C.UTF-8
+          python -m sphinx -b html source build/html
+          
+      - name: Check for build warnings
+        run: |
+          export LC_ALL=C.UTF-8
+          export LANG=C.UTF-8
+          python -m sphinx -b html source build/html -W
+        continue-on-error: true
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation-validation
+          path: docs/build/html
+          retention-days: 7
+        # Only upload on main branch to save storage
+        if: github.ref == 'refs/heads/main'
+        
+      - name: Validation Summary
+        run: |
+          echo "📋 Documentation validation completed!"
+          echo "✅ Build successful"
+          echo "📁 Artifacts uploaded for review"
+          echo ""
+          echo "NOTE: This is a validation-only workflow."
+          echo "For production deployment, use the 'Deploy to Production' workflow." 
