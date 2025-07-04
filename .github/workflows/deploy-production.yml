@@ -39,14 +39,14 @@ jobs:
       run:
         working-directory: docs
     steps:
+      - uses: actions/checkout@v4
+      
       - name: Check authorization
         run: |
           echo "🔒 Production deployment authorized for: ${{ github.actor }}"
           echo "📋 Branch: ${{ github.ref }}"
           echo "🎯 Environment: ${{ github.event.inputs.environment }}"
           echo "🚀 Deploying to: impossibly.dev/docs"
-          
-      - uses: actions/checkout@v4
       
       - name: Set up Python
         uses: actions/setup-python@v4
