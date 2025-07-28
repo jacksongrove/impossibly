@@ -98,10 +98,9 @@ class Graph:
             if n1 not in self.edges:
                 raise ValueError(f"{n1} is not a valid node in the graph. Please add it first.")
             for n2 in node2:
-                if n1 is not n2:
-                    if n2 not in self.edges:
-                        raise ValueError(f"{n2} is not a valid node in the graph. Please add it first.")
-                    self.edges[n1].append(n2)
+                if n2 not in self.edges and n2 != END:
+                    raise ValueError(f"{n2} is not a valid node in the graph. Please add it first.")
+                self.edges[n1].append(n2)
 
 
     def invoke(self, user_prompt: str = "", files: list[str] = [], show_thinking: bool = False) -> str:
@@ -141,6 +140,7 @@ class Graph:
         # Execute each node in the graph until END is reached
         curr_node = self.edges[START][0]
         prompt = user_prompt
+        original_prompt = user_prompt  # Store original task for self-loops
         author = 'user'
         selected_files = files
         while curr_node != END:
@@ -155,6 +155,7 @@ class Graph:
             i = 0
             if len(self.edges[curr_node]) > 1:
                 route_idx, output = self._get_route(curr_node, output)
+                i = route_idx
             
             # Route files intended to be passed
             selected_files, output = self._get_files(files, output)
@@ -167,9 +168,26 @@ class Graph:
             await global_memory.add(curr_node, self.edges[curr_node][i], output)
 
             # Continue executing through the graph until END is reached
-            curr_node = self.edges[curr_node][i]
-            prompt = output
-            author = 'user'
+            next_node = self.edges[curr_node][i]
+            
+            # Handle self-loops: reset conversation to maintain tool-calling behavior
+            if next_node == curr_node:
+                # Self-loop: Reset message history and use fresh context
+                if hasattr(curr_node, 'client') and hasattr(curr_node.client, 'messages') and curr_node.client.messages:
+                    # Keep only the system message (first message)
+                    system_msg = curr_node.client.messages[0]
+                    curr_node.client.messages = [system_msg]
+                
+                # Create fresh prompt with task context and progress
+                cleaned_output = output.replace(f'\\\\{curr_node.name}\\\\', '').strip()
+                prompt = f"{original_prompt}\n\nProgress so far: {cleaned_output}\n\nContinue with your task."
+                author = 'user'
+            else:
+                # Different agent: pass the full output
+                prompt = output
+                author = 'user'
+            
+            curr_node = next_node
         
         return None
     
@@ -191,21 +209,27 @@ class Graph:
                 - str: The output string with the routing command removed.
         '''
         options = self.edges[node]
-        # Regex from back of list to find agent names in delimited text
+        # Regex to find agent names - handle both single and double backslashes
+        # Try double backslashes first, then single backslashes
         match = re.search(r'(?<=\\\\)(.*?)(?=\\\\)', output, re.DOTALL)
+        if not match:
+            match = re.search(r'(?<=\\)(.*?)(?=\\)', output, re.DOTALL)
+        
         if match:
-            # Remove the last instance of the command from the output
-            output = re.sub(r'\\\\' + re.escape(match.group(1)) + r'\\\\', '', output, count=1)
+            # Remove the routing command from the output (handle both patterns)
+            command = match.group(1)
+            output = re.sub(r'\\\\?' + re.escape(command) + r'\\\\?', '', output, count=1)
             
             # Get index of the desired agent in the node's edge list
             # Check if the match is the END command
-            if match.group(1) == 'END':
+            if command == 'END':
                 return options.index(END), output
             else:
                 for i, option in enumerate(options):
-                    if option.name == match.group(1):
+                    if option.name == command:
                         return i, output
-        print("No route found. Choosing random route.")
+            
+        # No route found, choose default route
         return 0, output
 
 

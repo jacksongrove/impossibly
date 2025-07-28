@@ -1,179 +1,137 @@
+<div align="center">
+  <img src="impossibly-logo-full.png" alt="Impossibly Logo" width="600">
+  
+  <p><strong>Build, orchestrate and scale agents impossibly fast</strong></p>
+  
+  [![PyPI version](https://badge.fury.io/py/impossibly.svg)](https://badge.fury.io/py/impossibly)
+  [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+  [![GitHub stars](https://img.shields.io/badge/github-stars-yellow?style=social&logo=github)](https://github.com/jacksongrove/impossibly)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![Documentation](https://img.shields.io/badge/docs-impossibly.dev-blue)](https://impossibly.dev)
+  
+  [**Documentation**](https://impossibly.dev) | [**Examples**](examples/) | [**Discord**](https://discord.gg/impossibly) | [**GitHub**](https://github.com/jacksongrove/impossibly)
+</div>
+
+---
+
 # Impossibly
-Impossibly is an agentic orchestration framework for rapidly building agentic architectures in Python. It accelerates agentic development, empowering developers to craft architectures that enable LLMs to excel in higher-order tasks like idea generation and critical thinking.
 
-This library is designed to be used as a backend for AI apps and automations, providing support for all major LLM providers and locally-hosted model endpoints.
+Impossibly is a lean Python library for building and orchestrating production AI agents. Declare tools as plain Python functions, keep a tiny dependency footprint, and skip the boilerplate—the stable core ships with first-class multimodal support and built-in tracing so you can ship and debug impossibly fast.
 
-# Getting Started
-## Installation
+🎯 Why Impossibly?
+---
+1. Stable core without surprise breakages.
+2. Ultra-lean footprint. No dependency bloat.
+3. Declare tools as plain Python functions.
+4. Multi-modal out of the box.
+5. Powerful agents without the boilerplate. It's time to build impossibly fast.
 
-Install the base package:
-```bash
-pip install impossibly
-```
+## 🚀 Quick Start
 
-Or install with specific integrations:
-```bash
-# Minimal installations with specific providers
-pip install "impossibly[openai]"    # Only OpenAI support
-pip install "impossibly[anthropic]" # Only Anthropic support
-pip install "impossibly[all]"       # All LLM integrations
-
-# For testing and development
-pip install "impossibly[test]"      # All LLM integrations + testing tools
-pip install "impossibly[dev]"       # All LLM integrations + testing + dev tools
-```
-
-## Imports
-Import the components you need:
 ```python
 from impossibly import Agent, Graph, START, END
-```
 
-## Setting Up Environment Variables
-1. Copy the `.env.template` file to a new file named `.env`:
-   ```bash
-   cp .env.template .env
-   ```
-
-2. Fill in your API keys and configurations in the `.env` file:
-   ```
-   OPENAI_API_KEY=your_actual_api_key_here
-   ANTHROPIC_API_KEY=your_anthropic_api_key_here
-   ```
-
-3. The library will automatically load these variables when needed. At minimum, you'll need the API key for your preferred LLM provider.
-
-## Initalize Clients for LLM APIs
-Done in the format standard to your API.
-
-## Create Agents
-Initalize the agents you'd like to call with a simple schema:
-```
+# Create an Impossibly agent
 agent = Agent(
-          client=client, 
-          model="gpt-4o", 
-          name="Agent", 
-          system_prompt="You are a friendly assistant.",
-          description="This agent is an example agent."
-    )
-```
+    client=openai_client,
+    model="gpt-4o",
+    system_prompt="You are a helpful assistant",
+    tools=[web_search, calculator, database]
+)
 
-## Define how agents are executed with a Graph
-Graphs connect agents together using nodes and edges, routing the execution flow and all needed information through the graph. Each node represents an agent and each edge represents a conditional under which that agent is called. This conditional can be defined in natural language for each agent, within its `system_prompt`. 
-
-In the case of multiple edges branching from one node, agents can understand their routing options using the `description` field of connecting nodes.
-
-Every graph accepts user input at the `START` and returns a response to the user at the `END`.
-
-With this basic understanding, a graph can be created in just a few lines.
-```
+# Build a reasoning workflow
 graph = Graph()
-
-graph.add_node(agent)
-graph.add_node(summarizer_agent)
-
 graph.add_edge(START, agent)
-graph.add_edge(agent, summarizer_agent)
-graph.add_edge(summarizer_agent, END)
+graph.add_edge(agent, END)
+
+# Execute with autonomous reasoning
+result = graph.invoke("Analyze current market trends and provide strategic recommendations")
 ```
 
-## Run your Graph
-You're done! Prompt your agentic architecture.
-```
-graph.invoke("Hello there!")
+## ✨ Core Features
+
+### One-line Agent Instantiation
+Define agents and the tools available to them in a single object instantiation:
+- **Native Multi-modal Support**: Agents can work with both text and images straight out of the box
+- **Native Routing**: Under-the-hood prompt-injection to ensure intelligent decision making and routing
+- **Custom Functions:**
+Build functions simply with Python, then connect them as tools to your agents
+
+### Graph-Based Orchestration
+Agents connected with a visual and intuitive workflow design:
+- **Conditional Logic**: Route based on agent decisions
+- **Monitoring**: Track agent performance and decisions
+
+### Tool Integration
+Seamless connection to external systems and data with native Python functions:
+- **User-Created Tools**: Connect to any API, service, database and more with self-defined Python functions
+- **Own Your Tools**: Core updates won't break your functions—full control and easy fixes
+- **Custom Tools**: Build domain-specific capabilities with Python
+
+### Designed for Multi-Agent Architectures
+Specialized agents working together on complex tasks:
+- **Role-Based Design**: Each agent has a specific expertise
+- **Coordinated Workflows**: Agents pass work between each other
+- **Quality Assurance**: Multiple agents validate and improve results
+- **Scalable Architecture**: Add agents as complexity grows
+
+## 📚 Examples
+
+Explore practical implementations in the `/examples` directory:
+
+- **SQL Agent**: Autonomous database analysis with iterative reasoning
+- **Research Agent**: Multi-step research with source validation
+- **Conversational Agents**: Context-aware dialogue systems
+- **Tool Agents**: Specialized agents for specific tasks
+- **Mixture of Experts**: Dynamic agent selection based on task requirements
+
+## 🛠 Installation
+
+```bash
+# Base installation
+pip install impossibly
+
+# With specific LLM providers only
+pip install "impossibly[openai]"
+pip install "impossibly[anthropic]"
+pip install "impossibly[all]"
+
+# For development & contributions
+pip install "impossibly[dev]"
 ```
 
-# Development
-## Running Tests
-
-To run the tests, first install the package with test dependencies:
+## 🧪 Testing
 
 ```bash
 # Install with test dependencies
 pip install -e ".[test]"
-```
 
-Then run the tests using the CLI command that gets installed with the package:
-
-```bash
-# Run all tests
+# Run test suite
 impossibly run
 
-# Run just feature tests
-impossibly run --path features/
-
-# Run tests in Docker
+# Run in Docker
 impossibly run --docker
-
-# Get help
-impossibly run --help
 ```
 
-See [tests/README.md](tests/README.md) for more details on the testing framework and available options.
+## 📖 Documentation
 
-## Local Development and Running Examples
+Visit **[impossibly.dev](https://impossibly.dev)** for:
+- Complete API documentation
+- Agentic AI tutorials and guides
+- Framework comparisons (LangGraph, CrewAI, AutoGen)
+- Real-world case studies
+- Best practices for building reliable agents
 
-If you want to develop locally and test the examples, follow these steps:
+## 🤝 Community
 
-### Building the Package Locally
+- **Discord**: [Join our community](https://discord.gg/impossibly)
+- **GitHub**: [Contribute to the project](https://github.com/jacksongrove/impossibly)
+- **Documentation**: [Learn more at impossibly.dev](https://impossibly.dev)
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/jacksongrove/impossibly.git
-   cd impossibly
-   ```
+## 📄 License
 
-2. Create and activate a virtual environment (optional but recommended):
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
+MIT License - see [LICENSE](LICENSE) for details.
 
-3. Install development dependencies:
-   ```bash
-   pip install -e ".[dev]"
-   ```
+---
 
-4. Build the package locally:
-   ```bash
-   python -m build
-   ```
-   This will create distributions in the `dist/` directory.
-
-### Installing the Local Build to Run Examples
-
-There are two approaches to use your local build:
-
-#### Option 1: Install in Development Mode (Recommended)
-
-This allows changes to the source code to be immediately reflected without reinstalling:
-
-```bash
-pip install -e .
-```
-
-#### Option 2: Install the Built Wheel
-
-If you want to test the exact distribution that would be uploaded to PyPI:
-
-```bash
-pip install dist/impossibly-0.1.0-py3-none-any.whl
-```
-
-### Running Examples
-
-Once you've installed the package using either method, you can run the examples:
-
-```bash
-# Set up your environment variables first
-cp .env.template .env
-# Edit .env to add your API keys
-
-# Run an example
-python examples/image_agent/image_agent.py
-
-# Or try another example
-python examples/web_search_agent/web_search_agent.py
-```
-
-Make sure the required dependencies for each example are installed and the necessary API keys are in your `.env` file.
+**Ready to build, orchestrate and scale AI agents impossibly fast?** Start with the [documentation](https://impossibly.dev) and join the community pushing the boundaries of autonomous AI.
