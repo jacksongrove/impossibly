@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="impossibly-logo-full.png" alt="Impossibly Logo" width="600">
+  <img src="impossibly.png" alt="Impossibly Logo" width="600">
   
   <p><strong>Build, orchestrate and scale agents impossibly fast</strong></p>
   
