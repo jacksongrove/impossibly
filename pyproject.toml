@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "impossibly"
-version = "0.1.0"
-description = "An agentic architecture for idea generation & critical thinking"
+version = "0.1.1"
+description = "Build, orchestrate and scale agents impossibly fast"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
