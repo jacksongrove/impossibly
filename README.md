@@ -1,3 +1,9 @@
+<div align="center">
+  <img src="https://raw.githubusercontent.com/jacksongrove/impossibly/main/impossibly.png" alt="Impossibly Logo" width="600">
+  
+  <p><strong>Build, orchestrate and scale agents impossibly fast</strong></p>
+</div>
+
 # Impossibly
 Impossibly is an agentic orchestration framework for rapidly building agentic architectures in Python. It accelerates agentic development, empowering developers to craft architectures that enable LLMs to excel in higher-order tasks like idea generation and critical thinking.
 
