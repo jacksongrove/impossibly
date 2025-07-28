@@ -50,7 +50,7 @@ result = graph.invoke("Analyze current market trends and provide strategic recom
 
 ## ✨ Core Features
 
-### One-line Agent Instantiation
+### One-Line Agent Instantiation
 Define agents and the tools available to them in a single object instantiation:
 - **Native Multi-modal Support**: Agents can work with both text and images straight out of the box
 - **Native Routing**: Under-the-hood prompt-injection to ensure intelligent decision making and routing
